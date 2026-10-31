@@ -222,6 +222,10 @@ strings.esES = {
     ["Delete all your bookmarks. Saved competitions are kept."] =
         "Borra todos tus favoritos. Las competiciones guardadas se mantienen.",
     ["Remove competition"] = "Quitar competición",
+    ["Delete this competition and its transmogs"] = "Borrar esta competición y sus transfiguraciones",
+    ["Delete this theme's transmogs"] = "Borrar las transfiguraciones de esta temática",
+    ["Delete the transmogs saved under \"%s\" in \"%s\"?\nBookmarks are kept. This only affects you."] =
+        "¿Borrar las transfiguraciones guardadas en \"%s\" de \"%s\"?\nLos favoritos se mantienen. Solo te afecta a ti.",
     ["Remove \"%s\" from your gallery?\nBookmarks are kept. This only affects you."] =
         "¿Quitar \"%s\" de tu galería?\nLos favoritos se mantienen. Solo te afecta a ti.",
     ["< Prev"] = "< Anterior",

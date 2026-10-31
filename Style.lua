@@ -389,9 +389,73 @@ function S:Badge(parent)
     return f
 end
 
+-- Trash-can icon button built from solid pixel-aligned rectangles (crisp at small sizes,
+-- no texture file needed). Faded grey at rest, red with a soft red square on hover.
+local TRASH_W, TRASH_H = 13, 14
+local TRASH_SHAPE = {        -- { x, y, width, height } from the icon's top-left corner
+    { 4, 0, 5, 2 },          -- handle
+    { 0, -2, 13, 2 },        -- lid
+    { 2, -5, 2, 9 },         -- left wall
+    { 9, -5, 2, 9 },         -- right wall
+    { 2, -12, 9, 2 },        -- bottom
+    { 6, -6, 1, 5 },         -- centre slot
+}
+
+function S:TrashButton(parent, onClick, tooltip)
+    local b = CreateFrame("Button", nil, parent)
+    b:SetSize(20, 20)
+
+    b.bg = b:CreateTexture(nil, "BACKGROUND")
+    b.bg:SetPoint("CENTER")
+    b.bg:SetSize(18, 18)
+    b.bg:SetColorTexture(C.danger[1], C.danger[2], C.danger[3], 0.16)
+    b.bg:Hide()
+
+    local icon = CreateFrame("Frame", nil, b)
+    icon:SetSize(TRASH_W, TRASH_H)
+    icon:SetPoint("CENTER", 0, 0)
+    b.parts = {}
+    for i, r in ipairs(TRASH_SHAPE) do
+        local tex = icon:CreateTexture(nil, "OVERLAY")
+        tex:SetPoint("TOPLEFT", r[1], r[2])
+        tex:SetSize(r[3], r[4])
+        if tex.SetSnapToPixelGrid then
+            tex:SetSnapToPixelGrid(true)
+            tex:SetTexelSnappingBias(0)
+        end
+        b.parts[i] = tex
+    end
+
+    local function paint(c, alpha)
+        for _, tex in ipairs(b.parts) do tex:SetColorTexture(c[1], c[2], c[3], alpha) end
+    end
+    paint(C.muted, 0.7)
+
+    b:SetScript("OnEnter", function(self)
+        paint(C.danger, 1)
+        self.bg:Show()
+        if tooltip then
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:SetText(T(tooltip), 1, 1, 1, 1, true)
+            GameTooltip:Show()
+        end
+    end)
+    b:SetScript("OnLeave", function(self)
+        paint(C.muted, 0.7)
+        self.bg:Hide()
+        icon:SetPoint("CENTER", 0, 0)
+        GameTooltip_Hide()
+    end)
+    b:SetScript("OnMouseDown", function() icon:SetPoint("CENTER", 0, -1) end)
+    b:SetScript("OnMouseUp", function() icon:SetPoint("CENTER", 0, 0) end)
+    b:SetScript("OnClick", onClick)
+    return b
+end
+
 -- Row of tabs with an accent underline on the selected one, and < > arrows when they overflow.
 -- strip:SetItems({ { key = k, text = "Label" }, ... }, selectedKey)
 -- onSelect(key) on left click, onRightClick(key, tabButton) on right click.
+-- strip:SetDeleteHandler(canDelete, onDelete, tooltip) adds a trash icon to tabs where canDelete(key) is true.
 function S:TabStrip(parent, width, height, size, onSelect, onRightClick)
     local strip = CreateFrame("Frame", nil, parent)
     strip:SetSize(width, height)
@@ -438,15 +502,31 @@ function S:TabStrip(parent, width, height, size, onSelect, onRightClick)
                     onSelect(self.key)
                 end
             end)
+            tab.trash = S:TrashButton(tab, function()
+                if strip.onDelete then strip.onDelete(tab.key, tab) end
+            end, strip.deleteTooltip)
+            tab.trash:SetPoint("RIGHT", -4, 1)
+            tab.trash:Hide()
             strip.tabs[i] = tab
         end
         return tab
     end
 
+    local function Deletable(key)
+        return strip.canDelete ~= nil and strip.canDelete(key)
+    end
+
     local function Measure(i)
         local tab = GetTab(i)
-        tab.label:SetText(strip.items[i].text)
-        return math.ceil(tab.label:GetStringWidth()) + 24
+        local item = strip.items[i]
+        tab.label:SetText(item.text)
+        local w = math.ceil(tab.label:GetStringWidth()) + 24
+        if Deletable(item.key) then w = w + 20 end
+        return w
+    end
+
+    function strip:SetDeleteHandler(canDelete, onDelete, tooltip)
+        self.canDelete, self.onDelete, self.deleteTooltip = canDelete, onDelete, tooltip
     end
 
     function strip:Layout(ensureSelected)
@@ -487,6 +567,9 @@ function S:TabStrip(parent, width, height, size, onSelect, onRightClick)
                 tab:ClearAllPoints()
                 tab:SetPoint("BOTTOMLEFT", x, 0)
                 local selected = items[i].key == self.selected
+                local deletable = Deletable(items[i].key)
+                tab.trash:SetShown(deletable)
+                tab.label:SetPoint("CENTER", deletable and -10 or 0, 1)
                 tab.line:SetShown(selected)
                 tab.label:SetTextColor(unpack(selected and C.text or C.muted))
                 tab:Show()

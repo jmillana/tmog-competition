@@ -149,6 +149,11 @@ function Gallery:Build()
         self:OpenCompetitionMenu(key, tab)
     end)
     self.topTabs:SetPoint("TOPLEFT", PAD, -40)
+    -- Trash icon on every competition tab (not on Bookmarks, which has its own clear button).
+    self.topTabs:SetDeleteHandler(function(key) return key ~= BOOKMARKS end, function(key)
+        local comp = ns.History:Find(key)
+        if comp then self:ConfirmRemoveCompetition(comp) end
+    end, "Delete this competition and its transmogs")
 
     -- Competition tabs: clear every competition (bookmarks are kept).
     self.clearAll = S:Button(f, "Clear all", 86, 24, "danger", function()
@@ -176,6 +181,12 @@ function Gallery:Build()
         self:Refresh()
     end)
     self.subTabs:SetPoint("TOPLEFT", PAD, -74)
+    -- Trash icon on every theme tab.
+    self.subTabs:SetDeleteHandler(function() return true end, function(index)
+        local comp = ns.History:Find(self.sel)
+        local theme = comp and comp.themes[index]
+        if theme then self:ConfirmRemoveTheme(comp, theme) end
+    end, "Delete this theme's transmogs")
 
     self.heading = S:Text(f, 16, C.text, "CENTER")
     self.heading:SetPoint("TOP", 0, -110)
@@ -215,6 +226,25 @@ end
 ------------------------------------------------------------------------
 -- Menus and actions
 ------------------------------------------------------------------------
+function Gallery:ConfirmRemoveCompetition(comp)
+    TC:Confirm((L["Remove \"%s\" from your gallery?\nBookmarks are kept. This only affects you."]):format(comp.title),
+        function()
+            ns.History:RemoveCompetition(comp.id)
+            self.sel, self.themeIdx = nil, nil
+            self:Refresh()
+        end)
+end
+
+function Gallery:ConfirmRemoveTheme(comp, theme)
+    TC:Confirm((L["Delete the transmogs saved under \"%s\" in \"%s\"?\nBookmarks are kept. This only affects you."])
+        :format(ThemeName(theme.name), comp.title),
+        function()
+            ns.History:RemoveTheme(comp, theme)
+            self.themeIdx = nil
+            self:Refresh()
+        end)
+end
+
 function Gallery:OpenCompetitionMenu(key, tab)
     local comp = key ~= BOOKMARKS and ns.History:Find(key)
     if not comp then return end
@@ -222,14 +252,7 @@ function Gallery:OpenCompetitionMenu(key, tab)
         local popup = StaticPopupDialogs.TMOGCOMPETITION_RENAME
         popup.text, popup.button1, popup.button2 = L["Rename competition"], L["Accept"], L["Cancel"]
         StaticPopup_Show("TMOGCOMPETITION_RENAME", nil, nil, comp) end
-    local function remove()
-        TC:Confirm((L["Remove \"%s\" from your gallery?\nBookmarks are kept. This only affects you."]):format(comp.title),
-            function()
-                ns.History:RemoveCompetition(comp.id)
-                self.sel, self.themeIdx = nil, nil
-                self:Refresh()
-            end)
-    end
+    local function remove() self:ConfirmRemoveCompetition(comp) end
     if not S:ContextMenu(tab, function(root)
         root:CreateTitle(comp.title)
         root:CreateButton(L["Rename"], rename)

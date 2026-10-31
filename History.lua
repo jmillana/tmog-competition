@@ -177,6 +177,18 @@ function History:RemoveCompetition(id)
     self:Changed()
 end
 
+-- Removes one theme (and its transmogs) from a competition. Bookmarks are kept.
+-- If it is the running theme, the next round simply files under a fresh copy of it.
+function History:RemoveTheme(comp, theme)
+    for i, t in ipairs(comp.themes) do
+        if t == theme then
+            table.remove(comp.themes, i)
+            break
+        end
+    end
+    self:Changed()
+end
+
 function History:ClearBookmarks()
     wipe(self:Bookmarks())
     self:Changed()
