@@ -82,13 +82,14 @@ Open it with the **Gallery** button or `/tmogc gallery`. It opens automatically 
 The gallery is saved per player (not synced), so everyone keeps their own history.
 
 - **Top tabs:** **Bookmarks**, then one tab per competition (newest first, the running one marked LIVE). A competition is
-  titled with its date and starts with the first round after a Reset All. Right-click a tab to rename it.
+  titled with its date and starts with the first round after a Reset All. Right-click a tab to rename or remove it (its bookmarks are kept).
 - **Sub-tabs:** one per theme picked in that competition. Rounds are filed under the theme that was current.
 - **Cells:** outfit model (drag to rotate), rank, score and votes, 8 per page.
 - **Right-click a transmog:** Bookmark / Remove bookmark, Explore, Remove from gallery.
 - **Explore:** lists every piece (icon, slot, item, collected or not). Hover for the item tooltip, Shift-click to link it,
   **Try on** opens the outfit in the dressing room.
-- **Clear all:** deletes your saved competitions. Bookmarks are kept.
+- **Clear all** (competition tabs): deletes your saved competitions. Bookmarks are kept.
+- **Clear bookmarks** (Bookmarks tab): deletes your bookmarks only.
 
 How each outfit is drawn:
 1. Contestant in range: their own body, wearing the outfit they showcased.

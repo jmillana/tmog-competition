@@ -163,6 +163,25 @@ function History:Clear()
     self:Changed()
 end
 
+-- Removes one competition. Its bookmarks are kept. If it was the running one, the next
+-- round simply starts a new dated competition.
+function History:RemoveCompetition(id)
+    local history = Store()
+    for i, comp in ipairs(history.competitions) do
+        if comp.id == id then
+            table.remove(history.competitions, i)
+            break
+        end
+    end
+    if history.activeId == id then history.activeId = nil end
+    self:Changed()
+end
+
+function History:ClearBookmarks()
+    wipe(self:Bookmarks())
+    self:Changed()
+end
+
 ------------------------------------------------------------------------
 -- Bookmarks (independent copies, so they survive Clear and removals)
 ------------------------------------------------------------------------

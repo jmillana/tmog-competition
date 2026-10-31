@@ -150,15 +150,26 @@ function Gallery:Build()
     end)
     self.topTabs:SetPoint("TOPLEFT", PAD, -40)
 
-    local clear = S:Button(f, "Clear all", 86, 24, "danger", function()
-        TC:Confirm("Clear every saved transmog from your gallery?\nBookmarks are kept. This only affects you.",
+    -- Competition tabs: clear every competition (bookmarks are kept).
+    self.clearAll = S:Button(f, "Clear all", 86, 24, "danger", function()
+        TC:Confirm(L["Clear every saved transmog from your gallery?\nBookmarks are kept. This only affects you."],
             function()
                 ns.History:Clear()
                 self.sel, self.themeIdx = nil, nil
                 self:Refresh()
             end)
     end, "Delete your saved competitions. Bookmarks are kept.")
-    clear:SetPoint("TOPRIGHT", -PAD, -44)
+    self.clearAll:SetPoint("TOPRIGHT", -PAD, -44)
+
+    -- Bookmarks tab: its own button that only clears bookmarks.
+    self.clearBookmarks = S:Button(f, "Clear bookmarks", 110, 24, "danger", function()
+        TC:Confirm(L["Remove all your bookmarks? This only affects you."], function()
+            ns.History:ClearBookmarks()
+            self:Refresh()
+        end)
+    end, "Delete all your bookmarks. Saved competitions are kept.")
+    self.clearBookmarks:SetPoint("TOPRIGHT", -PAD, -44)
+    self.clearBookmarks:Hide()
 
     self.subTabs = S:TabStrip(f, WIDTH - 2 * PAD, 26, 11, function(key)
         self.themeIdx, self.page = key, 1
@@ -211,9 +222,18 @@ function Gallery:OpenCompetitionMenu(key, tab)
         local popup = StaticPopupDialogs.TMOGCOMPETITION_RENAME
         popup.text, popup.button1, popup.button2 = L["Rename competition"], L["Accept"], L["Cancel"]
         StaticPopup_Show("TMOGCOMPETITION_RENAME", nil, nil, comp) end
+    local function remove()
+        TC:Confirm((L["Remove \"%s\" from your gallery?\nBookmarks are kept. This only affects you."]):format(comp.title),
+            function()
+                ns.History:RemoveCompetition(comp.id)
+                self.sel, self.themeIdx = nil, nil
+                self:Refresh()
+            end)
+    end
     if not S:ContextMenu(tab, function(root)
         root:CreateTitle(comp.title)
         root:CreateButton(L["Rename"], rename)
+        root:CreateButton(L["Remove competition"], remove)
     end) then
         rename()
     end
@@ -416,6 +436,13 @@ function Gallery:Refresh()
     self.prev:SetEnabled(self.page > 1)
     self.next:SetEnabled(self.page < pages)
     self.pageText:SetText((L["Page %d of %d"]):format(self.page, pages))
+
+    -- Each page has its own clear button: competitions vs bookmarks.
+    local onBookmarks = self.sel == BOOKMARKS
+    self.clearAll:SetShown(not onBookmarks)
+    self.clearAll:SetEnabled(#ns.History:Competitions() > 0)
+    self.clearBookmarks:SetShown(onBookmarks)
+    self.clearBookmarks:SetEnabled(#ns.History:Bookmarks() > 0)
 end
 
 ------------------------------------------------------------------------

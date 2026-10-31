@@ -216,6 +216,14 @@ strings.esES = {
         "¿Borrar todas las transfiguraciones guardadas de tu galería?\nLos favoritos se mantienen. Solo te afecta a ti.",
     ["Delete your saved competitions. Bookmarks are kept."] =
         "Borra tus competiciones guardadas. Los favoritos se mantienen.",
+    ["Clear bookmarks"] = "Borrar favoritos",
+    ["Remove all your bookmarks? This only affects you."] =
+        "¿Quitar todos tus favoritos? Solo te afecta a ti.",
+    ["Delete all your bookmarks. Saved competitions are kept."] =
+        "Borra todos tus favoritos. Las competiciones guardadas se mantienen.",
+    ["Remove competition"] = "Quitar competición",
+    ["Remove \"%s\" from your gallery?\nBookmarks are kept. This only affects you."] =
+        "¿Quitar \"%s\" de tu galería?\nLos favoritos se mantienen. Solo te afecta a ti.",
     ["< Prev"] = "< Anterior",
     ["Next >"] = "Siguiente >",
     ["Bookmark"] = "Añadir a favoritos",
