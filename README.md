@@ -28,7 +28,16 @@ Only the group leader can shuffle, start/close rounds, announce the winner and r
 The addon is available in English and Spanish. By default it follows the game client (`esES`/`esMX` → Spanish, anything
 else → English). Click the gear icon at the top right of the main window (or `/tmogc settings`) to pick Automatic,
 English or Español. The change applies instantly, no reload needed. The settings window also has the chat
-announcement and auto-open options. Translations live in `Locale.lua`, where the English text is the key.
+announcement and auto-open options.
+
+### Translating
+Strings live in `Locales/enUS.lua` (also the fallback) and `Locales/esES.lua`; `Locale.lua` is the lookup core.
+- Keys are identifiers grouped by subsystem prefix (`CORE_`, `MAIN_`, `GALLERY_`, `DRAW_`, `EXPLORE_`, `SETTINGS_`, ...),
+  so rewording the English never breaks a translation.
+- Placeholders are named (`{player}`, `{round}`, `{score:.2f}`) and can be reordered freely in a translation.
+  Code uses `L.KEY` for plain text and `L:Format("KEY", { player = name })` for text with placeholders.
+- Multi-line text uses `[[ ]]`. Spanish addresses the player with "tú" and avoids "vosotros" (shared with `esMX`).
+- A missing translation falls back to English; a missing key shows the key name.
 
 ## Commands
 `/tmogc` opens or closes the window. Also: `/tmogc next | close | winner | resetpool | resetall | sync | announce | autoshow`.

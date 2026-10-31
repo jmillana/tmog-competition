@@ -23,7 +23,7 @@ local STAR = "Interface\\Common\\FavoritesIcon"
 
 -- "No theme" is stored as an internal key; show it translated.
 local function ThemeName(name)
-    return name == "No theme" and L["No theme"] or name
+    return name == "No theme" and L.THEME_NONE or name
 end
 
 local function EntryName(entry)
@@ -40,9 +40,9 @@ local function PopupEditBox(dialog)
 end
 
 StaticPopupDialogs["TMOGCOMPETITION_RENAME"] = {
-    text = "Rename competition",
-    button1 = ACCEPT or "Accept",
-    button2 = CANCEL or "Cancel",
+    text = "GALLERY_RENAME_TITLE",
+    button1 = ACCEPT or "POPUP_ACCEPT",
+    button2 = CANCEL or "POPUP_CANCEL",
     hasEditBox = 1,
     maxLetters = 40,
     OnShow = function(dialog, comp)
@@ -115,8 +115,8 @@ function Gallery:CreateCell(i)
     cell.note:SetPoint("BOTTOMLEFT", 8, 10)
     cell.note:SetWidth(CELL_W - 84)
 
-    cell.explore = S:Button(overlay, "Explore", 64, 20, "secondary", function() self:ExploreCell(cell) end,
-        "List every piece of this outfit with its item tooltip.")
+    cell.explore = S:Button(overlay, "GALLERY_EXPLORE", 64, 20, "secondary", function() self:ExploreCell(cell) end,
+        "GALLERY_EXPLORE_TIP")
     cell.explore:SetPoint("BOTTOMRIGHT", -6, 6)
 
     local divider = S:Divider(cell)
@@ -137,7 +137,7 @@ end
 
 function Gallery:Build()
     if self.frame then return end
-    local f = S:Window("TmogCompetitionGallery", WIDTH, HEIGHT, "Transmog Gallery")
+    local f = S:Window("TmogCompetitionGallery", WIDTH, HEIGHT, "GALLERY_TITLE")
     self.frame = f
     f:SetPoint("CENTER")
     f:SetFrameStrata("HIGH")
@@ -153,26 +153,26 @@ function Gallery:Build()
     self.topTabs:SetDeleteHandler(function(key) return key ~= BOOKMARKS end, function(key)
         local comp = ns.History:Find(key)
         if comp then self:ConfirmRemoveCompetition(comp) end
-    end, "Delete this competition and its transmogs")
+    end, "GALLERY_DELETE_COMPETITION_TIP")
 
     -- Competition tabs: clear every competition (bookmarks are kept).
-    self.clearAll = S:Button(f, "Clear all", 86, 24, "danger", function()
-        TC:Confirm(L["Clear every saved transmog from your gallery?\nBookmarks are kept. This only affects you."],
+    self.clearAll = S:Button(f, "GALLERY_CLEAR_ALL", 86, 24, "danger", function()
+        TC:Confirm(L.GALLERY_CONFIRM_CLEAR_ALL,
             function()
                 ns.History:Clear()
                 self.sel, self.themeIdx = nil, nil
                 self:Refresh()
             end)
-    end, "Delete your saved competitions. Bookmarks are kept.")
+    end, "GALLERY_CLEAR_ALL_TIP")
     self.clearAll:SetPoint("TOPRIGHT", -PAD, -44)
 
     -- Bookmarks tab: its own button that only clears bookmarks.
-    self.clearBookmarks = S:Button(f, "Clear bookmarks", 110, 24, "danger", function()
-        TC:Confirm(L["Remove all your bookmarks? This only affects you."], function()
+    self.clearBookmarks = S:Button(f, "GALLERY_CLEAR_BOOKMARKS", 110, 24, "danger", function()
+        TC:Confirm(L.GALLERY_CONFIRM_CLEAR_BOOKMARKS, function()
             ns.History:ClearBookmarks()
             self:Refresh()
         end)
-    end, "Delete all your bookmarks. Saved competitions are kept.")
+    end, "GALLERY_CLEAR_BOOKMARKS_TIP")
     self.clearBookmarks:SetPoint("TOPRIGHT", -PAD, -44)
     self.clearBookmarks:Hide()
 
@@ -186,7 +186,7 @@ function Gallery:Build()
         local comp = ns.History:Find(self.sel)
         local theme = comp and comp.themes[index]
         if theme then self:ConfirmRemoveTheme(comp, theme) end
-    end, "Delete this theme's transmogs")
+    end, "GALLERY_DELETE_THEME_TIP")
 
     self.heading = S:Text(f, 16, C.text, "CENTER")
     self.heading:SetPoint("TOP", 0, -110)
@@ -199,12 +199,12 @@ function Gallery:Build()
     for i = 1, PER_PAGE do self.cells[i] = self:CreateCell(i) end
 
     self.page = 1
-    self.prev = S:Button(f, "< Prev", 90, 26, "secondary", function()
+    self.prev = S:Button(f, "GALLERY_PREV", 90, 26, "secondary", function()
         self.page = self.page - 1
         self:Refresh()
     end)
     self.prev:SetPoint("BOTTOMLEFT", PAD, 14)
-    self.next = S:Button(f, "Next >", 90, 26, "secondary", function()
+    self.next = S:Button(f, "GALLERY_NEXT", 90, 26, "secondary", function()
         self.page = self.page + 1
         self:Refresh()
     end)
@@ -227,7 +227,7 @@ end
 -- Menus and actions
 ------------------------------------------------------------------------
 function Gallery:ConfirmRemoveCompetition(comp)
-    TC:Confirm((L["Remove \"%s\" from your gallery?\nBookmarks are kept. This only affects you."]):format(comp.title),
+    TC:Confirm(L:Format("GALLERY_CONFIRM_REMOVE_COMPETITION", { competition = comp.title }),
         function()
             ns.History:RemoveCompetition(comp.id)
             self.sel, self.themeIdx = nil, nil
@@ -236,8 +236,7 @@ function Gallery:ConfirmRemoveCompetition(comp)
 end
 
 function Gallery:ConfirmRemoveTheme(comp, theme)
-    TC:Confirm((L["Delete the transmogs saved under \"%s\" in \"%s\"?\nBookmarks are kept. This only affects you."])
-        :format(ThemeName(theme.name), comp.title),
+    TC:Confirm(L:Format("GALLERY_CONFIRM_REMOVE_THEME", { theme = ThemeName(theme.name), competition = comp.title }),
         function()
             ns.History:RemoveTheme(comp, theme)
             self.themeIdx = nil
@@ -250,13 +249,13 @@ function Gallery:OpenCompetitionMenu(key, tab)
     if not comp then return end
     local function rename()
         local popup = StaticPopupDialogs.TMOGCOMPETITION_RENAME
-        popup.text, popup.button1, popup.button2 = L["Rename competition"], L["Accept"], L["Cancel"]
+        popup.text, popup.button1, popup.button2 = L.GALLERY_RENAME_TITLE, L.POPUP_ACCEPT, L.POPUP_CANCEL
         StaticPopup_Show("TMOGCOMPETITION_RENAME", nil, nil, comp) end
     local function remove() self:ConfirmRemoveCompetition(comp) end
     if not S:ContextMenu(tab, function(root)
         root:CreateTitle(comp.title)
-        root:CreateButton(L["Rename"], rename)
-        root:CreateButton(L["Remove competition"], remove)
+        root:CreateButton(L.GALLERY_RENAME, rename)
+        root:CreateButton(L.GALLERY_REMOVE_COMPETITION, remove)
     end) then
         rename()
     end
@@ -284,10 +283,10 @@ function Gallery:OpenCellMenu(cell)
     local bookmarked = item.bookmark or History:IsBookmarked(History:Key(item.comp, item.theme, entry))
     if not S:ContextMenu(cell, function(root)
         root:CreateTitle(TC:Short(entry.name))
-        root:CreateButton(bookmarked and L["Remove bookmark"] or L["Bookmark"], toggleBookmark)
-        if entry.outfit then root:CreateButton(L["Explore"], function() self:ExploreCell(cell) end) end
+        root:CreateButton(bookmarked and L.GALLERY_REMOVE_BOOKMARK or L.GALLERY_BOOKMARK, toggleBookmark)
+        if entry.outfit then root:CreateButton(L.GALLERY_EXPLORE, function() self:ExploreCell(cell) end) end
         if not item.bookmark then
-            root:CreateButton(L["Remove from gallery"], function() History:RemoveEntry(item.theme, entry.name) end)
+            root:CreateButton(L.GALLERY_REMOVE_LOOK, function() History:RemoveEntry(item.theme, entry.name) end)
         end
     end) then
         toggleBookmark() -- no menu API: right-click just toggles the bookmark
@@ -326,11 +325,11 @@ function Gallery:RefreshTabs()
     local History = ns.History
     if self.sel ~= BOOKMARKS and not History:Find(self.sel) then self.sel = self:DefaultSelection() end
 
-    local items = { { key = BOOKMARKS, text = L["Bookmarks"] .. " " .. S:Color(C.muted, #History:Bookmarks()) } }
+    local items = { { key = BOOKMARKS, text = L.GALLERY_BOOKMARKS .. " " .. S:Color(C.muted, #History:Bookmarks()) } }
     local comps = History:Competitions()
     for i = #comps, 1, -1 do
         local comp = comps[i]
-        local live = comp.id == History:ActiveId() and S:Color(C.success, L["LIVE"] .. "  ") or ""
+        local live = comp.id == History:ActiveId() and S:Color(C.success, L.GALLERY_LIVE .. "  ") or ""
         items[#items + 1] = { key = comp.id, text = live .. comp.title }
     end
     self.topTabs:SetItems(items, self.sel)
@@ -362,15 +361,15 @@ function Gallery:CollectItems()
         for _, bookmark in ipairs(History:Bookmarks()) do
             items[#items + 1] = { entry = bookmark, bookmark = true }
         end
-        self.heading:SetText(S:Color(C.text, L["Bookmarks"]))
-        self.subtitle:SetText(#items > 0 and L["Your favourite looks from every competition. Right-click to remove one."]
-            or L["Right-click any transmog in a competition to bookmark it."])
+        self.heading:SetText(S:Color(C.text, L.GALLERY_BOOKMARKS))
+        self.subtitle:SetText(#items > 0 and L.GALLERY_BOOKMARKS_HINT
+            or L.GALLERY_BOOKMARKS_EMPTY)
         return items
     end
 
     if not theme then
         self.heading:SetText(S:Color(C.text, comp.title))
-        self.subtitle:SetText(L["No rounds yet. Themes appear here as they're picked."])
+        self.subtitle:SetText(L.GALLERY_NO_ROUNDS)
         return items
     end
 
@@ -382,12 +381,12 @@ function Gallery:CollectItems()
         if item.entry.rank == 1 then winners[#winners + 1] = EntryName(item.entry) end
     end
     if #winners > 0 then
-        self.heading:SetText(("%s  %s  %s"):format(S:Color(C.gold, #winners > 1 and L["Winners:"] or L["Winner:"]),
+        self.heading:SetText(("%s  %s  %s"):format(S:Color(C.gold, #winners > 1 and L.GALLERY_WINNERS or L.GALLERY_WINNER),
             table.concat(winners, ", "), S:Color(C.gold, ("%.2f"):format(items[1].entry.avg))))
     else
         self.heading:SetText(S:Color(C.text, ThemeName(theme.name)))
     end
-    self.subtitle:SetText((L["%s  -  %s  -  Drag to rotate, right-click for options"]):format(comp.title, ThemeName(theme.name)))
+    self.subtitle:SetText(L:Format("GALLERY_SUBTITLE", { competition = comp.title, theme = ThemeName(theme.name) }))
     return items
 end
 
@@ -411,9 +410,9 @@ function Gallery:RefreshCell(cell, item)
 
     if entry.avg then
         cell.score:SetText(S:Color(entry.rank == 1 and C.gold or C.text, ("%.2f"):format(entry.avg))
-            .. S:Color(C.muted, (L["  %d votes"]):format(entry.count or 0)))
+            .. S:Color(C.muted, "  " .. L:Format("GALLERY_VOTES", { count = entry.count or 0 })))
     else
-        cell.score:SetText(S:Color(C.muted, L["Not scored yet"]))
+        cell.score:SetText(S:Color(C.muted, L.GALLERY_NOT_SCORED))
     end
 
     local bookmarked
@@ -458,7 +457,7 @@ function Gallery:Refresh()
 
     self.prev:SetEnabled(self.page > 1)
     self.next:SetEnabled(self.page < pages)
-    self.pageText:SetText((L["Page %d of %d"]):format(self.page, pages))
+    self.pageText:SetText(L:Format("GALLERY_PAGE", { page = self.page, pages = pages }))
 
     -- Each page has its own clear button: competitions vs bookmarks.
     local onBookmarks = self.sel == BOOKMARKS

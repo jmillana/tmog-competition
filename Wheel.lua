@@ -110,7 +110,7 @@ function Wheel:BuildReel(f)
 
     self.empty = S:Text(overlay, 13, C.muted, "CENTER")
     self.empty:SetPoint("CENTER")
-    S:Static(self.empty, "No themes yet")
+    S:Static(self.empty, "DRAW_NO_THEMES")
 
     self.result = S:Text(f, 18, C.gold, "CENTER")
     self.result:SetPoint("TOP", reel, "BOTTOM", 0, -12)
@@ -121,27 +121,27 @@ function Wheel:BuildReel(f)
 end
 
 function Wheel:BuildControls(f)
-    self.spinBtn = S:Button(f, "Spin", 180, 32, "primary", function() ns.Themes:CmdSpin() end,
-        "Spin for everyone. The theme it stops on is removed from the pool.")
+    self.spinBtn = S:Button(f, "DRAW_SPIN", 180, 32, "primary", function() ns.Themes:CmdSpin() end,
+        "DRAW_SPIN_TIP")
     self.spinBtn.label:SetFontObject(S:Font(13))
     self.spinBtn:SetPoint("TOP", 0, -276)
 
     self.notLeader = S:Text(f, 11, C.muted, "CENTER")
     self.notLeader:SetPoint("TOP", 0, -286)
-    S:Static(self.notLeader, "Only the raid leader can add themes and spin.")
+    S:Static(self.notLeader, "DRAW_LEADER_ONLY")
 
-    self.listLabel = S:Label(f, "Themes")
+    self.listLabel = S:Label(f, "DRAW_THEMES")
     self.listLabel:SetPoint("TOPLEFT", PAD, -330)
-    self.resetBtn = S:Button(f, "Reset used", 90, 20, "ghost", function() ns.Themes:CmdReset() end,
-        "Put every theme that was already picked back in the draw.")
+    self.resetBtn = S:Button(f, "DRAW_RESET_USED", 90, 20, "ghost", function() ns.Themes:CmdReset() end,
+        "DRAW_RESET_USED_TIP")
     self.resetBtn:SetPoint("TOPRIGHT", -PAD, -324)
 
     local function add(edit)
         if ns.Themes:CmdAdd(edit:GetText()) then edit:SetText("") end
     end
-    self.input = S:Input(f, INNER - 78, 26, "New theme, e.g. Pirates", 40, add)
+    self.input = S:Input(f, INNER - 78, 26, "DRAW_NEW_THEME_PLACEHOLDER", 40, add)
     self.input:SetPoint("TOPLEFT", PAD, -352)
-    self.addBtn = S:Button(f, "Add", 70, 26, "primary", function() add(self.input) end)
+    self.addBtn = S:Button(f, "DRAW_ADD", 70, 26, "primary", function() add(self.input) end)
     self.addBtn:SetPoint("TOPRIGHT", -PAD, -352)
 
     local card = S:Panel(f)
@@ -156,7 +156,7 @@ end
 
 function Wheel:Build()
     if self.frame then return end
-    local f = S:Window("TmogCompetitionWheel", WIDTH, HEIGHT, "Theme Draw")
+    local f = S:Window("TmogCompetitionWheel", WIDTH, HEIGHT, "DRAW_TITLE")
     self.frame = f
     f:SetPoint("CENTER")
     f:SetFrameStrata("HIGH")
@@ -249,7 +249,7 @@ function Wheel:StartSpin(pool)
     self.state = "spinning"
     self.elapsed = 0
     self.speed = 0
-    self.resultLabel:SetText(L["SPINNING..."])
+    self.resultLabel:SetText(L.DRAW_SPINNING)
     self.reelFrame:SetScript("OnUpdate", function(_, elapsed) self:OnUpdate(elapsed) end)
     TC:Refresh() -- also updates the main window's Shuffle Themes button
 end
@@ -303,7 +303,7 @@ function Wheel:Finish()
     self.state = "holding"
     self.pos = math.floor(self.pos + 0.5)
     self:Draw(self.pos)
-    self.resultLabel:SetText(L["THE NEXT THEME IS"])
+    self.resultLabel:SetText(L.DRAW_NEXT_THEME_IS)
     self.result:SetText(S:Color(C.gold, self.pick))
     Sound("UI_EPICLOOT_TOAST")
     local done = self.onDone
@@ -344,7 +344,7 @@ function Wheel:GetRow(i)
         row.name:SetPoint("LEFT", 18, 0)
         row.name:SetWidth(200)
         row.remove = S:Button(row, "x", 20, 18, "ghost", function() ns.Themes:CmdRemove(row.theme) end,
-            "Remove this theme")
+            "DRAW_REMOVE_THEME_TIP")
         row.remove:SetPoint("RIGHT", -8, 0)
         row.status = S:Text(row, 10, C.muted, "RIGHT")
         row.status:SetPoint("RIGHT", row.remove, "LEFT", -8, 0)
@@ -368,7 +368,7 @@ function Wheel:RefreshList(db, isLeader)
             row.name:SetTextColor(unpack(C.muted))
             row.swatch:SetColorTexture(1, 1, 1, 0.1)
             local current = db.currentTheme and db.currentTheme:lower() == e.name:lower()
-            row.status:SetText(current and S:Color(C.gold, L["CURRENT"]) or L["USED"])
+            row.status:SetText(current and S:Color(C.gold, L.DRAW_STATUS_CURRENT) or L.DRAW_STATUS_USED)
         else
             local c = self:SegmentColor(e.seg, #db.themes)
             row.name:SetTextColor(unpack(C.text))
@@ -394,12 +394,12 @@ function Wheel:Refresh()
     if not self.state then
         if table.concat(db.themes, "\n") ~= self.segKey then self:SetSegments(Copy(db.themes)) end
         self:Draw(self.pos)
-        self.resultLabel:SetText(L["CURRENT THEME"])
+        self.resultLabel:SetText(L.DRAW_CURRENT_THEME)
         if db.currentTheme then
             self.result:SetText(S:Color(C.gold, db.currentTheme))
         else
-            self.result:SetText(S:Color(C.muted, isLeader and L["Add themes, then spin"]
-                or L["Waiting for the leader to spin"]))
+            self.result:SetText(S:Color(C.muted, isLeader and L.DRAW_HINT_LEADER
+                or L.DRAW_HINT_WAIT))
         end
     end
 
@@ -411,7 +411,7 @@ function Wheel:Refresh()
     self.resetBtn:SetShown(isLeader)
     self.resetBtn:SetEnabled(#db.usedThemes > 0)
 
-    self.listLabel:SetText(S:Upper((L["Themes  -  %d left, %d used"]):format(#db.themes, #db.usedThemes)))
+    self.listLabel:SetText(S:Upper(L:Format("DRAW_THEMES_COUNT", { left = #db.themes, used = #db.usedThemes })))
     self.listCard:SetPoint("TOPLEFT", PAD, isLeader and -386 or -352)
     self:RefreshList(db, isLeader)
 end

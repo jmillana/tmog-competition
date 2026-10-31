@@ -23,11 +23,11 @@ end
 
 function Settings:Build()
     if self.frame then return end
-    local f = S:Window("TmogCompetitionSettings", WIDTH, HEIGHT, "Settings")
+    local f = S:Window("TmogCompetitionSettings", WIDTH, HEIGHT, "SETTINGS_TITLE")
     self.frame = f
     f:SetFrameStrata("DIALOG")
 
-    local langLabel = S:Label(f, "Language")
+    local langLabel = S:Label(f, "SETTINGS_LANGUAGE")
     langLabel:SetPoint("TOPLEFT", PAD, -50)
 
     self.langButtons = {}
@@ -38,25 +38,25 @@ function Settings:Build()
         self.langButtons[i] = b
     end
 
-    local generalLabel = S:Label(f, "General")
+    local generalLabel = S:Label(f, "SETTINGS_GENERAL")
     generalLabel:SetPoint("TOPLEFT", PAD, -172)
 
-    self.announce = S:Checkbox(f, "Announce in group chat",
-        "Post rounds, scores, themes and winners to party/raid chat (leader only).",
+    self.announce = S:Checkbox(f, "SETTINGS_ANNOUNCE",
+        "SETTINGS_ANNOUNCE_TIP",
         function() return TC.db.announce end,
         function(value) TC.db.announce = value end)
     self.announce:SetPoint("TOPLEFT", PAD, -188)
     self.announce:SetWidth(INNER)
 
-    self.autoShow = S:Checkbox(f, "Open the window when a round starts",
-        "Show the competition window automatically when the leader starts a round.",
+    self.autoShow = S:Checkbox(f, "SETTINGS_AUTO_SHOW",
+        "SETTINGS_AUTO_SHOW_TIP",
         function() return TC.db.autoShow end,
         function(value) TC.db.autoShow = value end)
     self.autoShow:SetPoint("TOPLEFT", PAD, -214)
     self.autoShow:SetWidth(INNER)
 
-    self.restartRounds = S:Checkbox(f, "Restart the round counter for each new competition",
-        "When a finished competition is followed by a new one, rounds count from 1 again (leader only). Reset All always restarts them.",
+    self.restartRounds = S:Checkbox(f, "SETTINGS_RESTART_ROUNDS",
+        "SETTINGS_RESTART_ROUNDS_TIP",
         function() return TC.db.restartRounds end,
         function(value) TC.db.restartRounds = value end)
     self.restartRounds:SetPoint("TOPLEFT", PAD, -240)
@@ -65,7 +65,7 @@ function Settings:Build()
     local note = S:Text(f, 10, C.muted, "CENTER")
     note:SetPoint("BOTTOM", 0, 16)
     note:SetWidth(INNER)
-    S:Static(note, "Settings are saved for your account.")
+    S:Static(note, "SETTINGS_SAVED_NOTE")
 
     f:SetScript("OnShow", function() self:Refresh() end)
 end

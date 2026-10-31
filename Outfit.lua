@@ -69,7 +69,7 @@ function Outfit:CaptureAndSend()
         self.ticker = nil
         model:Hide()
         if not any then
-            TC.Print(L["Couldn't read your outfit. Type /tmogc outfit to try again."])
+            TC.Print(L.OUTFIT_CAPTURE_FAILED)
             return
         end
         local _, _, raceID = UnitRace("player")
@@ -218,7 +218,7 @@ function Outfit:Render(model, name, useStored)
         return nil
     end
     model:ClearModel()
-    return (L["Move closer to %s to see their outfit."]):format(TC:Short(name))
+    return L:Format("OUTFIT_MOVE_CLOSER", { player = TC:Short(name) })
 end
 
 -- Draws a specific saved outfit for `name` (used by the gallery history).
@@ -226,7 +226,7 @@ function Outfit:RenderOutfit(model, name, outfit)
     model.applyOnLoad = nil
     if not outfit then
         model:ClearModel()
-        return L["Outfit wasn't captured."]
+        return L.OUTFIT_NOT_CAPTURED
     end
 
     local unit = name and TC.group[name]
@@ -240,7 +240,7 @@ function Outfit:RenderOutfit(model, name, outfit)
             if model.SetCustomRace and outfit.race and outfit.sex then
                 ok = pcall(model.SetCustomRace, model, outfit.race, outfit.sex - 2)
             end
-            if not ok then note = L["Shown on your character"] end
+            if not ok then note = L.OUTFIT_ON_YOUR_CHARACTER end
         end
     end
 

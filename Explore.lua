@@ -13,11 +13,11 @@ local ROW_HEIGHT = 34
 
 -- Display order and names of transmog slots (inventory slot IDs).
 local SLOTS = {
-    { 1, "HEADSLOT", "Head" }, { 3, "SHOULDERSLOT", "Shoulder" }, { 15, "BACKSLOT", "Back" },
-    { 5, "CHESTSLOT", "Chest" }, { 4, "SHIRTSLOT", "Shirt" }, { 19, "TABARDSLOT", "Tabard" },
-    { 9, "WRISTSLOT", "Wrist" }, { 10, "HANDSSLOT", "Hands" }, { 6, "WAISTSLOT", "Waist" },
-    { 7, "LEGSSLOT", "Legs" }, { 8, "FEETSLOT", "Feet" }, { 16, "MAINHANDSLOT", "Main Hand" },
-    { 17, "SECONDARYHANDSLOT", "Off Hand" },
+    { 1, "HEADSLOT", "SLOT_HEAD" }, { 3, "SHOULDERSLOT", "SLOT_SHOULDER" }, { 15, "BACKSLOT", "SLOT_BACK" },
+    { 5, "CHESTSLOT", "SLOT_CHEST" }, { 4, "SHIRTSLOT", "SLOT_SHIRT" }, { 19, "TABARDSLOT", "SLOT_TABARD" },
+    { 9, "WRISTSLOT", "SLOT_WRIST" }, { 10, "HANDSSLOT", "SLOT_HANDS" }, { 6, "WAISTSLOT", "SLOT_WAIST" },
+    { 7, "LEGSSLOT", "SLOT_LEGS" }, { 8, "FEETSLOT", "SLOT_FEET" }, { 16, "MAINHANDSLOT", "SLOT_MAIN_HAND" },
+    { 17, "SECONDARYHANDSLOT", "SLOT_OFF_HAND" },
 }
 
 local function SlotName(def)
@@ -93,7 +93,7 @@ end
 ------------------------------------------------------------------------
 function Explore:Build()
     if self.frame then return end
-    local f = S:Window("TmogCompetitionExplore", WIDTH, HEIGHT, "Explore Outfit")
+    local f = S:Window("TmogCompetitionExplore", WIDTH, HEIGHT, "EXPLORE_TITLE")
     self.frame = f
     f:SetFrameStrata("DIALOG")
 
@@ -115,10 +115,10 @@ function Explore:Build()
 
     self.hint = S:Text(f, 10, C.muted, "CENTER")
     self.hint:SetPoint("BOTTOM", 0, 50)
-    S:Static(self.hint, "Hover a piece for its tooltip. Shift-click to link it in chat.")
+    S:Static(self.hint, "EXPLORE_HINT")
 
-    self.tryOn = S:Button(f, "Try on", 120, 26, "primary", function() self:TryOn() end,
-        "Open the whole outfit in the dressing room.")
+    self.tryOn = S:Button(f, "EXPLORE_TRY_ON", 120, 26, "primary", function() self:TryOn() end,
+        "EXPLORE_TRY_ON_TIP")
     self.tryOn:SetPoint("BOTTOM", 0, 14)
 
     f:SetScript("OnHide", function() self.outfit = nil end)
@@ -159,7 +159,7 @@ function Explore:GetRow(i)
         if p.link then GameTooltip:SetHyperlink(p.link) else GameTooltip:SetItemByID(p.itemID) end
         if p.illusionName then
             GameTooltip:AddLine(" ")
-            GameTooltip:AddLine(L["Illusion: "] .. p.illusionName, C.accent[1], C.accent[2], C.accent[3])
+            GameTooltip:AddLine(L.EXPLORE_ILLUSION_LABEL .. " " .. p.illusionName, C.accent[1], C.accent[2], C.accent[3])
         end
         GameTooltip:Show()
     end)
@@ -187,9 +187,9 @@ function Explore:Refresh()
         if color then r, g, b = color.r, color.g, color.b end
         row.iconBorder:SetColorTexture(r, g, b, 0.8)
         row.slot:SetText(p.label:upper() .. (p.illusionName and ("  +  " .. p.illusionName:upper()) or ""))
-        row.name:SetText(p.name or L["Loading..."])
+        row.name:SetText(p.name or L.EXPLORE_LOADING)
         row.name:SetTextColor(r, g, b)
-        row.status:SetText(p.collected and S:Color(C.success, L["Collected"]) or L["Not collected"])
+        row.status:SetText(p.collected and S:Color(C.success, L.EXPLORE_COLLECTED) or L.EXPLORE_NOT_COLLECTED)
         if p.pending then
             pending = true
             if Item and Item.CreateFromItemID then
@@ -202,7 +202,7 @@ function Explore:Refresh()
     self.scroll:UpdateThumb()
 
     if #pieces == 0 then
-        self.context:SetText(L["No pieces could be read for this outfit."])
+        self.context:SetText(L.EXPLORE_NO_PIECES)
     end
     self.tryOn:SetEnabled(DressUpItemTransmogInfoList ~= nil and #pieces > 0)
     return pending
@@ -232,7 +232,7 @@ end
 -- anchor (optional) is the frame to sit next to.
 function Explore:Open(title, outfit, context, anchor)
     if not outfit then
-        TC.Print(L["This outfit wasn't captured, so there is nothing to explore."])
+        TC.Print(L.EXPLORE_NOT_CAPTURED)
         return
     end
     self:Build()

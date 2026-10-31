@@ -36,8 +36,8 @@ end
 function Themes:Clean(name)
     name = (name or ""):gsub("[,:\t|]", " ")
     name = strtrim((name:gsub("%s+", " ")))
-    if name == "" then return nil, L["Type a theme name first."] end
-    if #name > MAX_LEN then return nil, ("Theme names can be up to %d characters."):format(MAX_LEN) end
+    if name == "" then return nil, L.THEME_NAME_EMPTY end
+    if #name > MAX_LEN then return nil, L:Format("THEME_NAME_TOO_LONG", { max = MAX_LEN }) end
     return name
 end
 
@@ -92,7 +92,7 @@ function Themes:CmdAdd(text)
         return false
     end
     if self:Exists(name) then
-        TC.Print((L["\"%s\" is already on the list."]):format(name))
+        TC.Print(L:Format("THEME_DUPLICATE", { theme = name }))
         return false
     end
     self:AddLocal(name)
@@ -110,7 +110,7 @@ end
 
 function Themes:CmdReset()
     if not TC:RequireLeader() then return end
-    TC:Confirm(L["Put every used theme back in the draw?"], function()
+    TC:Confirm(L.THEME_CONFIRM_RESET_USED, function()
         self:ResetLocal()
         TC:Send("THEMERESET")
         TC:Refresh()
@@ -120,20 +120,20 @@ end
 function Themes:CmdSpin()
     if not TC:RequireLeader() then return end
     if ns.Wheel:IsSpinning() or self.pickPending then
-        TC.Print(L["The draw is already running."])
+        TC.Print(L.THEME_ALREADY_SPINNING)
         return
     end
     if #TC.db.themes == 0 then
-        TC.Print(L["The theme pool is empty. Add themes or reset the used ones."])
+        TC.Print(L.THEME_POOL_EMPTY)
         return
     end
     if TC.db.phase == "VOTING" then
-        TC.Print(L["Close the current voting first."])
+        TC.Print(L.CORE_CLOSE_VOTING_FIRST)
         return
     end
     -- Picking a theme starts a fresh ranking; warn if this one was never announced.
     if next(TC.db.results) and not TC.db.winner then
-        TC:Confirm(L["This theme has results but no winner was announced. Spin anyway?\nIts results stay in its ranking tab."],
+        TC:Confirm(L.THEME_CONFIRM_SPIN_UNANNOUNCED,
             function() self:Spin() end)
         return
     end
@@ -163,7 +163,7 @@ function Themes:Spin()
         self:PickLocal(pick)
         TC:Send("THEMERESULT", pick, ("%.3f"):format(jitter))
         ns.Wheel:Land(pick, jitter, function()
-            TC:Announce((L["The next transmog theme is: %s!"]):format(pick), true)
+            TC:Announce(L:Format("THEME_ANNOUNCE_NEXT", { theme = pick }), true)
         end)
         TC:Refresh()
     end)

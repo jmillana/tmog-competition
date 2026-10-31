@@ -14,9 +14,9 @@ local ROW_HEIGHT = 22
 local MODEL_W, CARD_H = 140, 190
 
 local PHASES = {
-    IDLE = { "WAITING", C.muted },
-    VOTING = { "VOTING OPEN", C.success },
-    CLOSED = { "VOTING CLOSED", C.warning },
+    IDLE = { "MAIN_PHASE_WAITING", C.muted },
+    VOTING = { "MAIN_PHASE_VOTING", C.success },
+    CLOSED = { "MAIN_PHASE_CLOSED", C.warning },
 }
 
 ------------------------------------------------------------------------
@@ -86,7 +86,7 @@ function UI:BuildContestantCard(f)
 
     local x = MODEL_W + 16
     local w = INNER - x - 12
-    local label = S:Label(card, "Now showcasing", C.accent)
+    local label = S:Label(card, "MAIN_NOW_SHOWCASING", C.accent)
     label:SetPoint("TOPLEFT", x, -16)
 
     self.contestant = S:Text(card, 18, C.text)
@@ -109,7 +109,7 @@ function UI:BuildContestantCard(f)
 end
 
 function UI:BuildVoting(f)
-    local label = S:Label(f, "Your vote")
+    local label = S:Label(f, "MAIN_YOUR_VOTE")
     label:SetPoint("TOPLEFT", PAD, -282)
     self.myVoteText = S:Text(f, 11, C.muted, "RIGHT")
     self.myVoteText:SetPoint("TOPRIGHT", -PAD, -280)
@@ -127,7 +127,7 @@ function UI:BuildVoting(f)
 end
 
 function UI:BuildLeaderControls(f)
-    self.leaderLabel = S:Label(f, "Leader controls")
+    self.leaderLabel = S:Label(f, "MAIN_LEADER_CONTROLS")
     self.leaderLabel:SetPoint("TOPLEFT", PAD, -346)
 
     local bar = CreateFrame("Frame", nil, f)
@@ -142,33 +142,33 @@ function UI:BuildLeaderControls(f)
     -- Row 1: Start is wider so "Next participant" fits (also in Spanish).
     local startW, closeW = 140, 110
     local winnerW = INNER - startW - closeW - 8
-    self.nextBtn = S:Button(bar, "Start", startW, 26, "primary", function()
+    self.nextBtn = S:Button(bar, "MAIN_START", startW, 26, "primary", function()
         if self:StartStage(TC.db) == "start" then TC:CmdStart() else TC:CmdNextRound() end
-    end, "Start: begin the competition. Shuffle / Next participant: pick a random player who hasn't showcased yet and open voting.")
+    end, "MAIN_START_TIP")
     self.nextBtn:SetPoint("TOPLEFT", 0, 0)
-    self.closeBtn = S:Button(bar, "Close Voting", closeW, 26, "secondary", function() TC:CmdCloseVoting() end,
-        "End the current round and reveal the score.")
+    self.closeBtn = S:Button(bar, "MAIN_CLOSE_VOTING", closeW, 26, "secondary", function() TC:CmdCloseVoting() end,
+        "MAIN_CLOSE_VOTING_TIP")
     self.closeBtn:SetPoint("TOPLEFT", startW + 4, 0)
-    self.winnerBtn = S:Button(bar, "Announce Winner", winnerW, 26, "secondary", function() TC:CmdAnnounceWinner() end,
-        "Announce the highest average score to the group.")
+    self.winnerBtn = S:Button(bar, "MAIN_ANNOUNCE_WINNER", winnerW, 26, "secondary", function() TC:CmdAnnounceWinner() end,
+        "MAIN_ANNOUNCE_WINNER_TIP")
     self.winnerBtn:SetPoint("TOPLEFT", startW + closeW + 8, 0)
-    self.poolBtn = S:Button(bar, "Reset Pool", w, 22, "ghost", function() TC:CmdResetPool() end,
-        "Make everyone eligible for the shuffle again. Scores are kept.")
+    self.poolBtn = S:Button(bar, "MAIN_RESET_POOL", w, 22, "ghost", function() TC:CmdResetPool() end,
+        "MAIN_RESET_POOL_TIP")
     place(self.poolBtn, 0, 1)
-    self.resetBtn = S:Button(bar, "Reset All", w, 22, "danger", function() TC:CmdResetAll() end,
-        "Clear all scores, outfits and the shuffle pool.")
+    self.resetBtn = S:Button(bar, "MAIN_RESET_ALL", w, 22, "danger", function() TC:CmdResetAll() end,
+        "MAIN_RESET_ALL_TIP")
     place(self.resetBtn, 1, 1)
-    self.refreshBtn = S:Button(bar, "Refresh", w, 22, "ghost", function() TC:CmdRefresh() end,
-        "Ask everyone in the group to report that they have the addon, and resend the competition state.")
+    self.refreshBtn = S:Button(bar, "MAIN_REFRESH", w, 22, "ghost", function() TC:CmdRefresh() end,
+        "MAIN_REFRESH_TIP")
     place(self.refreshBtn, 2, 1)
     -- Row 3: theme draw and finishing the competition, half width each.
     local halfW = math.floor((INNER - 4) / 2)
-    self.shuffleBtn = S:Button(bar, "Shuffle Themes", halfW, 26, "secondary", function() ns.Themes:CmdSpin() end,
-        "Run the theme draw for everyone and pick the next theme.")
+    self.shuffleBtn = S:Button(bar, "MAIN_SHUFFLE_THEMES", halfW, 26, "secondary", function() ns.Themes:CmdSpin() end,
+        "MAIN_SHUFFLE_THEMES_TIP")
     self.shuffleBtn:SetPoint("TOPLEFT", 0, -56)
-    self.finishBtn = S:Button(bar, "Finish Competition", INNER - halfW - 4, 26, "secondary",
+    self.finishBtn = S:Button(bar, "MAIN_FINISH", INNER - halfW - 4, 26, "secondary",
         function() TC:CmdFinishCompetition() end,
-        "End the competition and announce the overall ranking (sum of each player's theme scores).")
+        "MAIN_FINISH_TIP")
     self.finishBtn:SetPoint("TOPLEFT", halfW + 4, -56)
 
     self.notLeader = S:Panel(f, S.Alpha(C.panel, 0.5))
@@ -176,7 +176,7 @@ function UI:BuildLeaderControls(f)
     self.notLeader:SetSize(INNER, 40)
     local text = S:Text(self.notLeader, 11, C.muted, "CENTER")
     text:SetPoint("CENTER")
-    S:Static(text, "Only the group leader can run the competition.")
+    S:Static(text, "MAIN_LEADER_ONLY")
 end
 
 function UI:BuildWinnerBanner(f)
@@ -237,11 +237,11 @@ function UI:BuildRanking(f)
 end
 
 function UI:BuildFooter(f)
-    local galleryBtn = S:Button(f, "Gallery", 80, 26, "primary", function() ns.Gallery:Toggle() end,
-        "Show every contestant's outfit with the current ranking.")
+    local galleryBtn = S:Button(f, "MAIN_GALLERY", 80, 26, "primary", function() ns.Gallery:Toggle() end,
+        "MAIN_GALLERY_TIP")
     galleryBtn:SetPoint("BOTTOMRIGHT", -PAD, 14)
-    local themesBtn = S:Button(f, "Themes", 80, 26, "secondary", function() ns.Wheel:Toggle() end,
-        "Open the theme draw.")
+    local themesBtn = S:Button(f, "MAIN_THEMES", 80, 26, "secondary", function() ns.Wheel:Toggle() end,
+        "MAIN_THEMES_TIP")
     themesBtn:SetPoint("RIGHT", galleryBtn, "LEFT", -6, 0)
 
     self.footer = S:Text(f, 11, C.muted)
@@ -257,7 +257,7 @@ end
 
 function UI:Build()
     if self.frame then return end
-    local f = S:Window("TmogCompetitionFrame", WIDTH, HEIGHT, "Transmog Competition", function(frame)
+    local f = S:Window("TmogCompetitionFrame", WIDTH, HEIGHT, "MAIN_TITLE", function(frame)
         local point, _, relPoint, x, y = frame:GetPoint()
         TC.db.frame = { point, relPoint, x, y }
     end)
@@ -268,7 +268,7 @@ function UI:Build()
     else
         f:SetPoint("CENTER")
     end
-    S:GearButton(f, function() ns.Settings:Toggle() end, "Settings")
+    S:GearButton(f, function() ns.Settings:Toggle() end, "SETTINGS_TITLE")
 
     self:BuildStatus(f)
     self:BuildContestantCard(f)
@@ -327,12 +327,12 @@ function UI:UpdateModel()
     m.facing = 0
     local note = ns.Outfit:Render(m, name, useStored)
     m:SetFacing(0)
-    m.msg:SetText(name and (note or "") or L["Waiting for the next round."])
+    m.msg:SetText(name and (note or "") or L.MAIN_WAITING_NEXT_ROUND)
 end
 
 function UI:RefreshContestant(db)
     local onStage = db.phase ~= "IDLE" and db.contestant
-    self.contestant:SetText(onStage and self:ColoredName(db.contestant) or S:Color(C.muted, L["No one yet"]))
+    self.contestant:SetText(onStage and self:ColoredName(db.contestant) or S:Color(C.muted, L.MAIN_NO_ONE_YET))
 
     if db.phase == "VOTING" then
         local pending, total = TC:GetPending()
@@ -340,31 +340,31 @@ function UI:RefreshContestant(db)
         self.progress:Show()
         self.progress:SetStatusBarColor(unpack(#pending == 0 and C.success or C.accent))
         self.progress:SetValue(total > 0 and voted / total or 0)
-        self.votesText:SetText((L["%d of %d voted"]):format(voted, total))
+        self.votesText:SetText(L:Format("MAIN_VOTED_COUNT", { voted = voted, total = total }))
         if #pending > 0 then
-            self.pendingText:SetText(S:Color(C.muted, L["Waiting on "]) .. self:NameList(pending))
+            self.pendingText:SetText(S:Color(C.muted, L.MAIN_WAITING_ON_LABEL .. " ") .. self:NameList(pending))
         else
-            self.pendingText:SetText(S:Color(C.success, L["All votes are in!"]))
+            self.pendingText:SetText(S:Color(C.success, L.MAIN_ALL_VOTED))
         end
     elseif db.phase == "CLOSED" and db.results[db.contestant] then
         local r = db.results[db.contestant]
         self.progress:Show()
         self.progress:SetStatusBarColor(unpack(C.gold))
         self.progress:SetValue(r.avg / TC.MAX_SCORE)
-        self.votesText:SetText(S:Color(C.gold, (L["%.2f"]):format(r.avg)) .. S:Color(C.muted, (L[" / %d"]):format(TC.MAX_SCORE)))
-        self.pendingText:SetText((L["from %d vote(s)"]):format(r.count))
+        self.votesText:SetText(S:Color(C.gold, ("%.2f"):format(r.avg)) .. S:Color(C.muted, (" / %d"):format(TC.MAX_SCORE)))
+        self.pendingText:SetText(L:Format("MAIN_FROM_VOTES", { count = r.count }))
     else
         self.progress:Hide()
         self.votesText:SetText("")
         local stage = self:StartStage(db)
         local hint
         if TC:IsLeader() then
-            hint = stage == "start" and L["Press Start to begin the competition."]
-                or stage == "shuffle" and L["Optionally pick a theme with Shuffle Themes, then press Shuffle to pick the first contestant."]
-                or L["Press Next participant to pick the next contestant."]
+            hint = stage == "start" and L.MAIN_HINT_START
+                or stage == "shuffle" and L.MAIN_HINT_SHUFFLE
+                or L.MAIN_HINT_NEXT
         else
-            hint = stage == "start" and L["Waiting for the leader to start the competition."]
-                or L["The leader will pick the next contestant."]
+            hint = stage == "start" and L.MAIN_HINT_WAIT_START
+                or L.MAIN_HINT_WAIT_NEXT
         end
         self.pendingText:SetText(hint)
     end
@@ -378,20 +378,20 @@ function UI:RefreshVoting(db, me)
         b:SetSelected(db.phase == "VOTING" and db.myVote == score)
     end
     if db.phase ~= "VOTING" then
-        self.myVoteText:SetText(L["Voting is closed"])
+        self.myVoteText:SetText(L.MAIN_VOTING_CLOSED)
     elseif me == db.contestant then
-        self.myVoteText:SetText(S:Color(C.accent, L["You're on stage! Strike a pose."]))
+        self.myVoteText:SetText(S:Color(C.accent, L.MAIN_ON_STAGE))
     elseif not db.voters[me] then
-        self.myVoteText:SetText(L["You joined mid-round. Vote next round."])
+        self.myVoteText:SetText(L.MAIN_JOINED_MID_ROUND)
     elseif db.myVote then
-        self.myVoteText:SetText((L["Voted %s, click to change"]):format(S:Color(C.accent, db.myVote)))
+        self.myVoteText:SetText(L:Format("MAIN_VOTED", { score = S:Color(C.accent, db.myVote) }))
     else
-        self.myVoteText:SetText((L["Pick a score from %d to %d"]):format(TC.MIN_SCORE, TC.MAX_SCORE))
+        self.myVoteText:SetText(L:Format("MAIN_PICK_SCORE", { min = TC.MIN_SCORE, max = TC.MAX_SCORE }))
     end
 end
 
 local function CategoryName(theme)
-    return theme or L["No theme"]
+    return theme or L.THEME_NONE
 end
 
 -- Builds the tab list and returns the selected category (nil for Overall).
@@ -402,7 +402,7 @@ function UI:RefreshRankTabs(db)
     for _, cat in ipairs(categories) do
         if next(cat.results) then hasResults = true end
     end
-    if hasResults or db.finished then items[#items + 1] = { key = "overall", text = L["Overall"] } end
+    if hasResults or db.finished then items[#items + 1] = { key = "overall", text = L.MAIN_TAB_OVERALL } end
     for _, cat in ipairs(categories) do
         local text = CategoryName(cat.theme)
         items[#items + 1] = { key = cat.key, text = cat.current and S:Color(C.success, text) or text }
@@ -427,9 +427,9 @@ function UI:RefreshRanking(db)
     local category = self:RefreshRankTabs(db)
     local header = self.rankHeader
     local overall = self.rankTab == "overall"
-    header.name:SetText(L["PLAYER"])
-    header.score:SetText(overall and L["POINTS"] or L["SCORE"])
-    header.votes:SetText(overall and L["THEMES"] or L["VOTES"])
+    header.name:SetText(L.MAIN_COL_PLAYER)
+    header.score:SetText(overall and L.MAIN_COL_POINTS or L.MAIN_COL_SCORE)
+    header.votes:SetText(overall and L.MAIN_COL_THEMES or L.MAIN_COL_VOTES)
 
     local entries
     if overall then
@@ -455,14 +455,14 @@ function UI:RefreshRanking(db)
         elseif e.avg then
             row.rank:SetText(e.rank)
             row.rank:SetTextColor(unpack(S:RankColor(e.rank)))
-            row.score:SetText((L["%.2f"]):format(e.avg))
+            row.score:SetText(("%.2f"):format(e.avg))
             row.score:SetTextColor(unpack(e.rank == 1 and C.gold or C.text))
             row.votes:SetText(e.count)
         else
             row.rank:SetText("-")
             row.rank:SetTextColor(unpack(C.muted))
             row.score:SetText("")
-            row.votes:SetText(onStage and S:Color(C.success, L["on stage"]) or L[e.status])
+            row.votes:SetText(onStage and S:Color(C.success, L.MAIN_STATUS_ON_STAGE) or L[e.status])
         end
         if onStage then
             row.bg:SetColorTexture(C.success[1], C.success[2], C.success[3], 0.10)
@@ -490,12 +490,12 @@ function UI:Refresh()
     local phase = PHASES[db.phase] or PHASES.IDLE
     self.phase:Set(L[phase[1]], phase[2])
     if db.finished then
-        self.roundText:SetText(L["Competition finished"])
+        self.roundText:SetText(L.MAIN_FINISHED)
     else
-        self.roundText:SetText(db.round > 0 and (L["Round %d"]):format(db.round) or L["Not started"])
+        self.roundText:SetText(db.round > 0 and L:Format("MAIN_ROUND", { round = db.round }) or L.MAIN_NOT_STARTED)
     end
-    self.leaderText:SetText(TC.leader and (S:Color(C.muted, L["Leader "]) .. self:ColoredName(TC.leader)) or "")
-    self.themeText:SetText(db.currentTheme and (L["Theme "] .. S:Color(C.gold, db.currentTheme)) or "")
+    self.leaderText:SetText(TC.leader and (S:Color(C.muted, L.MAIN_LEADER_LABEL .. " ") .. self:ColoredName(TC.leader)) or "")
+    self.themeText:SetText(db.currentTheme and (L.MAIN_THEME_LABEL .. " " .. S:Color(C.gold, db.currentTheme)) or "")
 
     self:RefreshContestant(db)
     self:RefreshVoting(db, me)
@@ -506,7 +506,7 @@ function UI:Refresh()
     self.notLeader:SetShown(not isLeader)
     -- Start -> Shuffle (first contestant; theme draw is optional before it) -> Next participant.
     local stage = self:StartStage(db)
-    self.nextBtn:SetText(stage == "start" and L["Start"] or stage == "shuffle" and L["Shuffle"] or L["Next participant"])
+    self.nextBtn:SetText(stage == "start" and L.MAIN_START or stage == "shuffle" and L.MAIN_SHUFFLE or L.MAIN_NEXT_PARTICIPANT)
     S:FitLabel(self.nextBtn)
     self.nextBtn:SetEnabled(db.phase ~= "VOTING" and (stage == "start" or #pool > 0))
     -- The theme draw is available once the competition has started.
@@ -515,7 +515,7 @@ function UI:Refresh()
     self.closeBtn:SetEnabled(db.phase == "VOTING")
     self.winnerBtn:SetEnabled(db.phase ~= "VOTING" and not db.finished and next(db.results) ~= nil)
     self.finishBtn:SetEnabled(db.phase ~= "VOTING" and not db.finished and #TC:GetOverallRanking() > 0)
-    self.finishBtn:SetText(db.finished and L["Competition finished"] or L["Finish Competition"])
+    self.finishBtn:SetText(db.finished and L.MAIN_FINISHED or L.MAIN_FINISH)
 
     -- Winner banner: overall winner once finished, otherwise the current theme's winner.
     local ov = db.finished and db.overallWinner
@@ -523,11 +523,11 @@ function UI:Refresh()
     local hasWinner = (ov and #ov.names > 0) or (w and #w.names > 0)
     self.winnerBanner:SetShown(hasWinner and true or false)
     if ov and #ov.names > 0 then
-        local label = #ov.names > 1 and L["OVERALL WINNERS"] or L["OVERALL WINNER"]
+        local label = #ov.names > 1 and L.MAIN_OVERALL_WINNERS or L.MAIN_OVERALL_WINNER
         self.winnerBanner.text:SetText(("%s  %s  %s"):format(label, self:NameList(ov.names),
             S:Color(C.gold, ("%.2f"):format(ov.score))))
     elseif hasWinner then
-        local label = #w.names > 1 and L["WINNERS"] or L["WINNER"]
+        local label = #w.names > 1 and L.MAIN_WINNERS or L.MAIN_WINNER
         if w.theme then label = label .. " - " .. S:Upper(w.theme) end
         self.winnerBanner.text:SetText(("%s  %s  %s"):format(label, self:NameList(w.names),
             S:Color(C.gold, ("%.2f"):format(w.avg))))
@@ -545,10 +545,10 @@ function UI:Refresh()
     for name in pairs(TC.participants) do
         if TC.group[name] then inGroup = inGroup + 1 end
     end
-    local footer = (L["%s of %d still to showcase"]):format(S:Color(C.text, #pool), inGroup)
+    local footer = L:Format("MAIN_STILL_TO_SHOWCASE", { left = S:Color(C.text, #pool), total = inGroup })
     local missing = TC:GetMissingAddon()
     if #missing > 0 then
-        footer = footer .. "\n" .. S:Color(C.danger, L["Missing addon: "]) .. self:NameList(missing)
+        footer = footer .. "\n" .. S:Color(C.danger, L.MAIN_MISSING_ADDON_LABEL .. " ") .. self:NameList(missing)
     end
     self.footer:SetText(footer)
 end

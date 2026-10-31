@@ -98,7 +98,7 @@ local function Split(data, sep)
 end
 
 local function Round2(n)
-    return tonumber((L["%.2f"]):format(n))
+    return tonumber(("%.2f"):format(n))
 end
 
 function TC:Refresh()
@@ -145,7 +145,7 @@ end
 
 function TC:RequireLeader()
     if self:IsLeader() then return true end
-    Print(L["Only the group leader can do that."])
+    Print(L.CORE_LEADER_ONLY)
     return false
 end
 
@@ -192,7 +192,7 @@ function TC:Send(...)
     end
     local msg = table.concat(parts, SEP)
     if #msg > 255 then
-        Print(L["Message too long, not sent: "] .. parts[1])
+        Print(L.CORE_MESSAGE_TOO_LONG .. " " .. parts[1])
         return
     end
     queue[#queue + 1] = { msg = msg, channel = channel, tries = 0 }
@@ -645,11 +645,11 @@ function TC:GetScoreboard()
     for _, name in ipairs(others) do
         local status
         if db.phase == "VOTING" and name == db.contestant then
-            status = "on stage"
+            status = "MAIN_STATUS_ON_STAGE"
         elseif db.shown[name] then
-            status = "shown"
+            status = "MAIN_STATUS_SHOWN"
         else
-            status = "waiting"
+            status = "MAIN_STATUS_WAITING"
         end
         rows[#rows + 1] = { name = name, status = status }
     end
@@ -682,7 +682,7 @@ StaticPopupDialogs["TMOGCOMPETITION_CONFIRM"] = {
 
 function TC:Confirm(text, fn)
     local popup = StaticPopupDialogs["TMOGCOMPETITION_CONFIRM"]
-    popup.button1, popup.button2 = L["Yes"], L["No"]
+    popup.button1, popup.button2 = L.POPUP_YES, L.POPUP_NO
     StaticPopup_Show("TMOGCOMPETITION_CONFIRM", text, nil, fn)
 end
 
@@ -709,11 +709,11 @@ function TC:Vote(score)
     local me = self:Me()
     if db.phase ~= "VOTING" then return end
     if me == db.contestant then
-        Print(L["You can't vote for yourself."])
+        Print(L.CORE_NO_SELF_VOTE)
         return
     end
     if not db.voters[me] then
-        Print(L["You joined after this round started, so you can vote from the next round."])
+        Print(L.CORE_JOINED_MID_ROUND)
         return
     end
     db.votes[me] = score
@@ -727,21 +727,21 @@ end
 function TC:CmdStart()
     if not self:RequireLeader() then return end
     if db.phase == "VOTING" then
-        Print(L["Close the current voting first."])
+        Print(L.CORE_CLOSE_VOTING_FIRST)
         return
     end
     if db.started and not db.finished then return end
     self:EnsureNewCompetition()
     db.started = true
     self:Send("STARTED")
-    self:Announce(L["The transmog competition has started!"], true)
+    self:Announce(L.CORE_ANNOUNCE_STARTED, true)
     self:Refresh()
 end
 
 function TC:CmdNextRound()
     if not self:RequireLeader() then return end
     if db.phase == "VOTING" then
-        Print(L["Close the current voting before starting the next round."])
+        Print(L.CORE_CLOSE_BEFORE_NEXT)
         return
     end
     self:EnsureNewCompetition()
@@ -751,7 +751,7 @@ function TC:CmdNextRound()
     end
     local pool = self:GetPool()
     if #pool == 0 then
-        Print(L["Everyone has already showcased. Reset the pool to start again."])
+        Print(L.CORE_POOL_EMPTY)
         return
     end
     local pick = pool[math.random(#pool)]
@@ -765,15 +765,14 @@ function TC:CmdNextRound()
     self:StartRoundLocal(id, pick, voters)
     self:Send("ROUND", id, pick)
     self:SendList("VOTERS", id, voters)
-    self:Announce((L["Transmog round %d: %s is up! Cast your votes (%d-%d)."]):format(
-        id, self:Short(pick), self.MIN_SCORE, self.MAX_SCORE), true)
+    self:Announce(L:Format("CORE_ANNOUNCE_ROUND", { round = id, player = self:Short(pick), min = self.MIN_SCORE, max = self.MAX_SCORE }), true)
     self:Refresh()
 end
 
 function TC:CmdCloseVoting()
     if not self:RequireLeader() then return end
     if db.phase ~= "VOTING" then
-        Print(L["No voting in progress."])
+        Print(L.CORE_NO_VOTING)
         return
     end
     local function close()
@@ -789,12 +788,12 @@ function TC:CmdCloseVoting()
         local avg = count > 0 and Round2(total / count) or 0
         self:CloseLocal(db.round, db.contestant, avg, count, total)
         self:Send("CLOSE", db.round, db.contestant, ("%.2f"):format(avg), count, total)
-        self:Announce((L["%s scored %.2f (%d votes)."]):format(self:Short(db.contestant), avg, count))
+        self:Announce(L:Format("CORE_ANNOUNCE_SCORE", { player = self:Short(db.contestant), score = avg, count = count }))
         self:Refresh()
     end
     local pending = self:GetPending()
     if #pending > 0 then
-        self:Confirm((L["%d vote(s) still pending. Close voting anyway?"]):format(#pending), close)
+        self:Confirm(L:Format("CORE_CONFIRM_CLOSE_PENDING", { count = #pending }), close)
     else
         close()
     end
@@ -803,12 +802,12 @@ end
 function TC:CmdAnnounceWinner()
     if not self:RequireLeader() then return end
     if db.phase == "VOTING" then
-        Print(L["Close the current voting first."])
+        Print(L.CORE_CLOSE_VOTING_FIRST)
         return
     end
     local ranking = self:GetRanking()
     if #ranking == 0 then
-        Print(L["No results yet."])
+        Print(L.CORE_NO_RESULTS)
         return
     end
     local function announce()
@@ -824,23 +823,23 @@ function TC:CmdAnnounceWinner()
         self:Send("WINNER", table.concat(winners, ","), ("%.2f"):format(best), theme or "")
         local who = table.concat(shortNames, ", ")
         if theme and #winners == 1 then
-            self:Announce((L["The winner of %s is %s with %.2f points!"]):format(theme, who, best), true)
+            self:Announce(L:Format("CORE_ANNOUNCE_THEME_WINNER", { theme = theme, player = who, score = best }), true)
         elseif theme then
-            self:Announce((L["It's a tie in %s! %s with %.2f points!"]):format(theme, who, best), true)
+            self:Announce(L:Format("CORE_ANNOUNCE_THEME_TIE", { theme = theme, players = who, score = best }), true)
         elseif #winners == 1 then
-            self:Announce((L["The transmog winner is %s with %.2f points!"]):format(who, best), true)
+            self:Announce(L:Format("CORE_ANNOUNCE_WINNER", { player = who, score = best }), true)
         else
-            self:Announce((L["It's a tie! %s with %.2f points!"]):format(who, best), true)
+            self:Announce(L:Format("CORE_ANNOUNCE_TIE", { players = who, score = best }), true)
         end
         for i = 1, math.min(3, #ranking) do
             local r = ranking[i]
-            self:Announce((L["%d. %s - %.2f (%d votes)"]):format(r.rank, self:Short(r.name), r.avg, r.count))
+            self:Announce(L:Format("CORE_ANNOUNCE_RANK_LINE", { rank = r.rank, player = self:Short(r.name), score = r.avg, count = r.count }))
         end
         self:Refresh()
     end
     local remaining = #self:GetPool()
     if remaining > 0 then
-        self:Confirm((L["%d player(s) haven't showcased yet. Announce the winner anyway?"]):format(remaining), announce)
+        self:Confirm(L:Format("CORE_CONFIRM_WINNER_EARLY", { count = remaining }), announce)
     else
         announce()
     end
@@ -848,7 +847,7 @@ end
 
 function TC:CmdResetPool()
     if not self:RequireLeader() then return end
-    self:Confirm(L["Reset the shuffle pool? Everyone becomes eligible to showcase again (scores are kept)."], function()
+    self:Confirm(L.CORE_CONFIRM_RESET_POOL, function()
         wipe(db.shown)
         self:Send("RESETPOOL")
         self:Refresh()
@@ -857,7 +856,7 @@ end
 
 function TC:CmdResetAll()
     if not self:RequireLeader() then return end
-    self:Confirm(L["Reset the whole competition? All scores and the shuffle pool will be cleared."], function()
+    self:Confirm(L.CORE_CONFIRM_RESET_ALL, function()
         self:ResetAllLocal()
         self:Send("RESETALL")
         self:Refresh()
@@ -867,19 +866,19 @@ end
 function TC:CmdFinishCompetition()
     if not self:RequireLeader() then return end
     if db.phase == "VOTING" then
-        Print(L["Close the current voting first."])
+        Print(L.CORE_CLOSE_VOTING_FIRST)
         return
     end
     if db.finished then
-        Print(L["The competition is already finished."])
+        Print(L.CORE_ALREADY_FINISHED)
         return
     end
     local ranking = self:GetOverallRanking()
     if #ranking == 0 then
-        Print(L["No results yet."])
+        Print(L.CORE_NO_RESULTS)
         return
     end
-    self:Confirm(L["Finish the competition and announce the overall ranking?"], function()
+    self:Confirm(L.CORE_CONFIRM_FINISH, function()
         local best = ranking[1].score
         local winners, shortNames = {}, {}
         for _, r in ipairs(ranking) do
@@ -891,13 +890,13 @@ function TC:CmdFinishCompetition()
         self:Send("FINISH", table.concat(winners, ","), ("%.2f"):format(best))
         local who = table.concat(shortNames, ", ")
         if #winners == 1 then
-            self:Announce((L["The competition is over! Overall winner: %s with %.2f points!"]):format(who, best), true)
+            self:Announce(L:Format("CORE_ANNOUNCE_OVERALL_WINNER", { player = who, score = best }), true)
         else
-            self:Announce((L["The competition is over! Overall tie: %s with %.2f points!"]):format(who, best), true)
+            self:Announce(L:Format("CORE_ANNOUNCE_OVERALL_TIE", { players = who, score = best }), true)
         end
         for i = 1, math.min(3, #ranking) do
             local r = ranking[i]
-            self:Announce((L["%d. %s - %.2f (%d themes)"]):format(r.rank, self:Short(r.name), r.score, r.themes))
+            self:Announce(L:Format("CORE_ANNOUNCE_OVERALL_LINE", { rank = r.rank, player = self:Short(r.name), score = r.score, themes = r.themes }))
         end
         if ns.UI then ns.UI:ShowOverall() end
         self:Refresh()
@@ -1013,11 +1012,11 @@ SlashCmdList.TMOGCOMPETITION = function(input)
         TC[COMMANDS[msg]](TC)
     elseif msg == "announce" then
         db.announce = not db.announce
-        Print(db.announce and L["Chat announcements enabled."] or L["Chat announcements disabled."])
+        Print(db.announce and L.CORE_ANNOUNCE_ON or L.CORE_ANNOUNCE_OFF)
     elseif msg == "autoshow" then
         db.autoShow = not db.autoShow
-        Print(db.autoShow and L["Open window on new round enabled."] or L["Open window on new round disabled."])
+        Print(db.autoShow and L.CORE_AUTO_SHOW_ON or L.CORE_AUTO_SHOW_OFF)
     else
-        Print(L["Commands:"] .. " /tmogc [show | settings | themes | spin | addtheme <name> | gallery | outfit | start | next | close | winner | finish | resetpool | resetall | sync | announce | autoshow]")
+        Print(L.CORE_COMMANDS .. " /tmogc [show | settings | themes | spin | addtheme <name> | gallery | outfit | start | next | close | winner | finish | resetpool | resetall | sync | announce | autoshow]")
     end
 end
