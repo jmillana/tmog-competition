@@ -8,5 +8,8 @@
 Locale.lua
 Style.lua
 TmogCompetition.lua
+History.lua
 Outfit.lua
 UI.lua
+Explore.lua
+Gallery.lua
