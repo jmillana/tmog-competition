@@ -389,6 +389,15 @@ function S:Badge(parent)
     return f
 end
 
+-- Shrinks a button's label font (12 -> 11 -> 10) until the text fits.
+function S:FitLabel(button)
+    local maxW = button:GetWidth() - 10
+    for _, size in ipairs({ 12, 11, 10 }) do
+        button.label:SetFontObject(self:Font(size))
+        if button.label:GetStringWidth() <= maxW then return end
+    end
+end
+
 -- Trash-can icon button built from solid pixel-aligned rectangles (crisp at small sizes,
 -- no texture file needed). Faded grey at rest, red with a soft red square on hover.
 local TRASH_W, TRASH_H = 13, 14

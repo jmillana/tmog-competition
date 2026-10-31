@@ -151,9 +151,19 @@ strings.esES = {
     ["Now showcasing"] = "En la pasarela",
     ["Your vote"] = "Tu voto",
     ["Leader controls"] = "Controles del líder",
-    ["Shuffle & Start"] = "Sortear y empezar",
-    ["Pick a random player who hasn't showcased yet and open voting."] =
-        "Elige al azar a un jugador que aún no haya desfilado y abre la votación.",
+    ["Start"] = "Empezar",
+    ["Next participant"] = "Siguiente participante",
+    ["Shuffle"] = "Sortear",
+    ["Start: begin the competition. Shuffle / Next participant: pick a random player who hasn't showcased yet and open voting."] =
+        "Empezar: inicia la competición. Sortear / Siguiente participante: elige al azar a un jugador que aún no haya desfilado y abre la votación.",
+    ["The transmog competition has started!"] = "¡Empieza la competición de transfiguración!",
+    ["Press Start to begin the competition."] = "Pulsa Empezar para iniciar la competición.",
+    ["Optionally pick a theme with Shuffle Themes, then press Shuffle to pick the first contestant."] =
+        "Si quieres, elige una temática con Sortear temáticas y luego pulsa Sortear para elegir al primer participante.",
+    ["Waiting for the leader to start the competition."] = "Esperando a que el líder inicie la competición.",
+    ["Shuffle Themes"] = "Sortear temáticas",
+    ["Run the theme draw for everyone and pick the next theme."] =
+        "Hace el sorteo de temáticas para todos y elige la siguiente temática.",
     ["Close Voting"] = "Cerrar votación",
     ["End the current round and reveal the score."] = "Termina la ronda actual y muestra la puntuación.",
     ["Announce Winner"] = "Anunciar ganador",
@@ -181,8 +191,8 @@ strings.esES = {
     ["Waiting on "] = "Faltan ",
     ["All votes are in!"] = "¡Ya han votado todos!",
     ["from %d vote(s)"] = "de %d voto(s)",
-    ["Press Shuffle & Start to pick the first contestant."] =
-        "Pulsa Sortear y empezar para elegir al primer participante.",
+    ["Press Next participant to pick the next contestant."] =
+        "Pulsa Siguiente participante para elegir al siguiente.",
     ["The leader will pick the next contestant."] = "El líder elegirá al siguiente participante.",
     ["Voting is closed"] = "La votación está cerrada",
     ["You're on stage! Strike a pose."] = "¡Estás en la pasarela! Posa.",

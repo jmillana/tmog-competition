@@ -143,6 +143,10 @@ end
 function Themes:Spin()
     if ns.Wheel:IsSpinning() or self.pickPending then return end
     TC:EnsureNewCompetition() -- first spin after a finished competition starts a new one
+    if not TC.db.started then
+        TC.db.started = true
+        TC:Send("STARTED")
+    end
     TC:Send("THEMESPIN")
     ns.Wheel:StartSpin(Copy(TC.db.themes))
     self.pickPending = true

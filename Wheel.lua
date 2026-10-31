@@ -251,7 +251,7 @@ function Wheel:StartSpin(pool)
     self.speed = 0
     self.resultLabel:SetText(L["SPINNING..."])
     self.reelFrame:SetScript("OnUpdate", function(_, elapsed) self:OnUpdate(elapsed) end)
-    self:Refresh()
+    TC:Refresh() -- also updates the main window's Shuffle Themes button
 end
 
 -- Phase 2: slow down and stop with `pick` in the middle row.
@@ -312,17 +312,17 @@ function Wheel:Finish()
     C_Timer.After(HOLD, function()
         if self.state == "holding" then
             self.state = nil
-            self:Refresh()
+            TC:Refresh()
         end
     end)
-    self:Refresh()
+    TC:Refresh()
 end
 
 function Wheel:Abort()
     if self.reelFrame then self.reelFrame:SetScript("OnUpdate", nil) end
     self.state = nil
     self.pos = math.floor((self.pos or 0) + 0.5)
-    self:Refresh()
+    TC:Refresh()
 end
 
 ------------------------------------------------------------------------

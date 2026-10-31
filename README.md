@@ -4,7 +4,9 @@ Run transmog competitions in a party or raid. Every participant needs the addon 
 
 ## How it works
 1. Form a group. Everyone with the addon shows up as a participant (players without it are listed under "Missing addon").
-2. The **group leader** clicks **Shuffle & Start**. A random participant who hasn't showcased yet goes on stage, and voting opens for everyone else.
+2. The **group leader** clicks **Start** to begin the competition. Optionally, **Shuffle Themes** picks a theme first.
+   Then **Shuffle** puts a random participant who hasn't showcased yet on stage and opens voting; after that the button
+   reads **Next participant**. A new theme makes everyone eligible again, so its first pick is a **Shuffle** again.
 3. Players vote 1-10. The window shows how many votes are still pending and who hasn't voted yet. Scores stay hidden until the round closes. You can change your vote until then.
 4. The leader clicks **Close Voting**. The average score is revealed and added to the ranking.
 5. Repeat until everyone has showcased, then click **Announce Winner** (highest average; ties break on vote count).
@@ -17,7 +19,7 @@ asked to confirm before spinning away from a theme whose winner was never announ
 
 The ranking has a tab per category (theme) plus **Overall**. When every theme is done, the leader clicks
 **Finish Competition**: the overall ranking (sum of each player's theme scores) is announced with the top 3 and shown to
-everyone. The next Shuffle & Start or spin begins a new competition. Turn on **Restart the round counter for each new
+everyone. The button goes back to **Start**, which begins a new competition. Turn on **Restart the round counter for each new
 competition** in settings (on by default) to count rounds from 1 again. Reset All always restarts the counter.
 
 Only the group leader can shuffle, start/close rounds, announce the winner and reset. Other clients ignore those messages from anyone else.
@@ -51,6 +53,7 @@ announcement and auto-open options. Translations live in `Locale.lua`, where the
 | `WINNER names avg` | leader | winner(s) |
 | `RESETPOOL` / `RESETALL` | leader | resets (Reset All also restarts the round counter) |
 | `FINISH names score` / `NEWCOMP restartRounds` | leader | finish (overall winner) / start a new competition |
+| `STARTED` | leader | the leader pressed Start (also part of the STATE sync) |
 | `TRCOUNT n` + list `TR` | leader | sync of finished themes (`@theme`, then results) |
 | `STATE round phase contestant winners avg` | leader | sync header |
 | `L tag id more items` | leader | chunked list (`VOTERS`, `VOTED`, `SHOWN`, `RES`) |
@@ -67,7 +70,7 @@ The draw is shown as a vertical reel: the selected theme sits in the highlighted
 below. With a single theme left, all three rows show it.
 
 1. The leader adds themes (type a name and press Enter or **Add**, or `/tmogc addtheme <name>`).
-2. The leader clicks **Spin** (or `/tmogc spin`). Every player's draw opens and starts spinning.
+2. The leader clicks **Shuffle Themes** in the main window, or **Spin** in the draw window (or `/tmogc spin`). Every player's draw opens and starts spinning.
 3. About 2 seconds later the leader's addon picks a random theme and sends it to everyone. Every reel slows down and stops with it in the middle,
    and the leader's client announces it in raid chat.
 4. The picked theme leaves the pool and becomes the current theme (shown in the main window's title bar).

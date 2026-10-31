@@ -40,6 +40,7 @@ local DEFAULTS = {
     finished = false,    -- the leader finished the competition (overall ranking announced)
     overallWinner = nil, -- { names = {...}, score = n }
     restartRounds = true, -- leader option: a new competition after a finish restarts the round counter
+    started = false,       -- the leader pressed Start for the running competition
     announce = true,
     autoShow = true,
     frame = nil,
@@ -240,7 +241,8 @@ function TC:SendSync()
     local w, ov = db.winner, db.overallWinner
     self:Send("STATE", db.round, db.phase, db.contestant,
         w and table.concat(w.names, ",") or "", w and ("%.2f"):format(w.avg) or "", w and w.theme or "",
-        db.finished and 1 or 0, ov and table.concat(ov.names, ",") or "", ov and ("%.2f"):format(ov.score) or "")
+        db.finished and 1 or 0, ov and table.concat(ov.names, ",") or "", ov and ("%.2f"):format(ov.score) or "",
+        db.started and 1 or 0)
     self:Send("TRCOUNT", #db.themeResults)
     for i, entry in ipairs(db.themeResults) do
         local items = { "@" .. (entry.theme or "") }
@@ -325,6 +327,7 @@ local function ClearCompetition(resetRound)
     db.winner = nil
     db.finished = false
     db.overallWinner = nil
+    db.started = false
     if resetRound then db.round = 0 end
 end
 
@@ -342,6 +345,7 @@ function TC:FinishLocal(names, score)
     db.phase = "IDLE"
     db.contestant = nil
     db.finished = true
+    db.started = false -- the next Start begins a new competition
     db.overallWinner = { names = names, score = score }
     if ns.History then ns.History:EndCompetition() end
 end
@@ -371,7 +375,7 @@ local Handlers, ListHandlers = {}, {}
 local LEADER_ONLY = {
     PING = true, ROUND = true, CLOSE = true, WINNER = true,
     RESETPOOL = true, RESETALL = true, STATE = true, L = true,
-    FINISH = true, NEWCOMP = true, TRCOUNT = true,
+    FINISH = true, NEWCOMP = true, TRCOUNT = true, STARTED = true,
 }
 -- Other files (Outfit.lua, Themes.lua) register their own message types here.
 TC.Handlers, TC.ListHandlers, TC.LEADER_ONLY = Handlers, ListHandlers, LEADER_ONLY
@@ -434,14 +438,19 @@ function Handlers.NEWCOMP(self, sender, resetRound)
     self:NewCompetitionLocal(resetRound == "1")
 end
 
+function Handlers.STARTED(self)
+    db.started = true
+end
+
 -- Sync of archived themes: TRCOUNT n, then one "TR" list per theme ("@theme", "name:avg:count:total", ...).
 function Handlers.TRCOUNT(self, sender, count)
     count = tonumber(count) or 0
     for i = #db.themeResults, count + 1, -1 do table.remove(db.themeResults, i) end
 end
 
-function Handlers.STATE(self, sender, round, phase, contestant, winners, winAvg, winTheme, finished, ovNames, ovScore)
+function Handlers.STATE(self, sender, round, phase, contestant, winners, winAvg, winTheme, finished, ovNames, ovScore, started)
     db.finished = finished == "1"
+    db.started = started == "1"
     if ovNames and ovNames ~= "" then
         db.overallWinner = { names = Split(ovNames, ","), score = tonumber(ovScore) or 0 }
     else
@@ -713,6 +722,22 @@ function TC:Vote(score)
     self:Refresh()
 end
 
+-- Leader pressed Start: begins the competition (a new one after a finish). The theme draw
+-- is optional before shuffling the first contestant.
+function TC:CmdStart()
+    if not self:RequireLeader() then return end
+    if db.phase == "VOTING" then
+        Print(L["Close the current voting first."])
+        return
+    end
+    if db.started and not db.finished then return end
+    self:EnsureNewCompetition()
+    db.started = true
+    self:Send("STARTED")
+    self:Announce(L["The transmog competition has started!"], true)
+    self:Refresh()
+end
+
 function TC:CmdNextRound()
     if not self:RequireLeader() then return end
     if db.phase == "VOTING" then
@@ -720,6 +745,10 @@ function TC:CmdNextRound()
         return
     end
     self:EnsureNewCompetition()
+    if not db.started then -- e.g. /tmogc next without pressing Start
+        db.started = true
+        self:Send("STARTED")
+    end
     local pool = self:GetPool()
     if #pool == 0 then
         Print(L["Everyone has already showcased. Reset the pool to start again."])
@@ -958,6 +987,7 @@ local COMMANDS = {
     resetall = "CmdResetAll",
     sync = "CmdRefresh",
     finish = "CmdFinishCompetition",
+    start = "CmdStart",
 }
 
 SLASH_TMOGCOMPETITION1 = "/tmogc"
@@ -988,6 +1018,6 @@ SlashCmdList.TMOGCOMPETITION = function(input)
         db.autoShow = not db.autoShow
         Print(db.autoShow and L["Open window on new round enabled."] or L["Open window on new round disabled."])
     else
-        Print(L["Commands:"] .. " /tmogc [show | settings | themes | spin | addtheme <name> | gallery | outfit | next | close | winner | finish | resetpool | resetall | sync | announce | autoshow]")
+        Print(L["Commands:"] .. " /tmogc [show | settings | themes | spin | addtheme <name> | gallery | outfit | start | next | close | winner | finish | resetpool | resetall | sync | announce | autoshow]")
     end
 end

@@ -33,6 +33,16 @@ function UI:ColoredName(name)
     return short
 end
 
+-- Main leader button stage:
+--   "start"  - competition not started yet (or finished): Start begins it
+--   "shuffle" - started, nobody has showcased yet in this theme: picks the first contestant
+--   "next"   - picks the next contestant
+function UI:StartStage(db)
+    if not db.started or db.finished then return "start" end
+    if next(db.shown) == nil then return "shuffle" end
+    return "next"
+end
+
 function UI:NameList(names)
     local list = {}
     for i, name in ipairs(names) do list[i] = self:ColoredName(name) end
@@ -129,15 +139,19 @@ function UI:BuildLeaderControls(f)
     local function place(button, col, row)
         button:SetPoint("TOPLEFT", col * (w + 4), -row * 30)
     end
-    self.nextBtn = S:Button(bar, "Shuffle & Start", w, 26, "primary", function() TC:CmdNextRound() end,
-        "Pick a random player who hasn't showcased yet and open voting.")
-    place(self.nextBtn, 0, 0)
-    self.closeBtn = S:Button(bar, "Close Voting", w, 26, "secondary", function() TC:CmdCloseVoting() end,
+    -- Row 1: Start is wider so "Next participant" fits (also in Spanish).
+    local startW, closeW = 140, 110
+    local winnerW = INNER - startW - closeW - 8
+    self.nextBtn = S:Button(bar, "Start", startW, 26, "primary", function()
+        if self:StartStage(TC.db) == "start" then TC:CmdStart() else TC:CmdNextRound() end
+    end, "Start: begin the competition. Shuffle / Next participant: pick a random player who hasn't showcased yet and open voting.")
+    self.nextBtn:SetPoint("TOPLEFT", 0, 0)
+    self.closeBtn = S:Button(bar, "Close Voting", closeW, 26, "secondary", function() TC:CmdCloseVoting() end,
         "End the current round and reveal the score.")
-    place(self.closeBtn, 1, 0)
-    self.winnerBtn = S:Button(bar, "Announce Winner", w, 26, "secondary", function() TC:CmdAnnounceWinner() end,
+    self.closeBtn:SetPoint("TOPLEFT", startW + 4, 0)
+    self.winnerBtn = S:Button(bar, "Announce Winner", winnerW, 26, "secondary", function() TC:CmdAnnounceWinner() end,
         "Announce the highest average score to the group.")
-    place(self.winnerBtn, 2, 0)
+    self.winnerBtn:SetPoint("TOPLEFT", startW + closeW + 8, 0)
     self.poolBtn = S:Button(bar, "Reset Pool", w, 22, "ghost", function() TC:CmdResetPool() end,
         "Make everyone eligible for the shuffle again. Scores are kept.")
     place(self.poolBtn, 0, 1)
@@ -147,10 +161,15 @@ function UI:BuildLeaderControls(f)
     self.refreshBtn = S:Button(bar, "Refresh", w, 22, "ghost", function() TC:CmdRefresh() end,
         "Ask everyone in the group to report that they have the addon, and resend the competition state.")
     place(self.refreshBtn, 2, 1)
-    self.finishBtn = S:Button(bar, "Finish Competition", INNER, 26, "secondary",
+    -- Row 3: theme draw and finishing the competition, half width each.
+    local halfW = math.floor((INNER - 4) / 2)
+    self.shuffleBtn = S:Button(bar, "Shuffle Themes", halfW, 26, "secondary", function() ns.Themes:CmdSpin() end,
+        "Run the theme draw for everyone and pick the next theme.")
+    self.shuffleBtn:SetPoint("TOPLEFT", 0, -56)
+    self.finishBtn = S:Button(bar, "Finish Competition", INNER - halfW - 4, 26, "secondary",
         function() TC:CmdFinishCompetition() end,
         "End the competition and announce the overall ranking (sum of each player's theme scores).")
-    self.finishBtn:SetPoint("TOPLEFT", 0, -56)
+    self.finishBtn:SetPoint("TOPLEFT", halfW + 4, -56)
 
     self.notLeader = S:Panel(f, S.Alpha(C.panel, 0.5))
     self.notLeader:SetPoint("TOPLEFT", PAD, -350)
@@ -337,8 +356,17 @@ function UI:RefreshContestant(db)
     else
         self.progress:Hide()
         self.votesText:SetText("")
-        self.pendingText:SetText(TC:IsLeader() and L["Press Shuffle & Start to pick the first contestant."]
-            or L["The leader will pick the next contestant."])
+        local stage = self:StartStage(db)
+        local hint
+        if TC:IsLeader() then
+            hint = stage == "start" and L["Press Start to begin the competition."]
+                or stage == "shuffle" and L["Optionally pick a theme with Shuffle Themes, then press Shuffle to pick the first contestant."]
+                or L["Press Next participant to pick the next contestant."]
+        else
+            hint = stage == "start" and L["Waiting for the leader to start the competition."]
+                or L["The leader will pick the next contestant."]
+        end
+        self.pendingText:SetText(hint)
     end
     self:UpdateModel()
 end
@@ -476,8 +504,14 @@ function UI:Refresh()
     self.leaderLabel:SetShown(isLeader)
     self.leaderBar:SetShown(isLeader)
     self.notLeader:SetShown(not isLeader)
-    -- After a finish, Shuffle & Start begins the next competition.
-    self.nextBtn:SetEnabled(db.phase ~= "VOTING" and (#pool > 0 or db.finished))
+    -- Start -> Shuffle (first contestant; theme draw is optional before it) -> Next participant.
+    local stage = self:StartStage(db)
+    self.nextBtn:SetText(stage == "start" and L["Start"] or stage == "shuffle" and L["Shuffle"] or L["Next participant"])
+    S:FitLabel(self.nextBtn)
+    self.nextBtn:SetEnabled(db.phase ~= "VOTING" and (stage == "start" or #pool > 0))
+    -- The theme draw is available once the competition has started.
+    self.shuffleBtn:SetEnabled(stage ~= "start" and db.phase ~= "VOTING" and #db.themes > 0
+        and not ns.Wheel:IsSpinning() and not ns.Themes.pickPending)
     self.closeBtn:SetEnabled(db.phase == "VOTING")
     self.winnerBtn:SetEnabled(db.phase ~= "VOTING" and not db.finished and next(db.results) ~= nil)
     self.finishBtn:SetEnabled(db.phase ~= "VOTING" and not db.finished and #TC:GetOverallRanking() > 0)
