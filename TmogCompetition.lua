@@ -30,7 +30,7 @@ local DEFAULTS = {
     myVote = nil,
     results = {},   -- [name] = { avg, count, total }
     shown = {},     -- [name] = true: already showcased (shuffle pool)
-    winner = nil,   -- { names = {...}, avg = n }
+    winner = nil,   -- { names = {...}, avg = n, theme = "Pirates" or nil }
     outfits = {},   -- [name] = { race, sex, slots = { [slotID] = { appearanceID, secondaryID, illusionID } } }
     themes = {},     -- theme pool still available for the carousel (in order)
     usedThemes = {}, -- themes already picked
@@ -235,7 +235,7 @@ function TC:SendSync()
     if not IsInGroup() or not self:IsLeader() then return end
     local w = db.winner
     self:Send("STATE", db.round, db.phase, db.contestant,
-        w and table.concat(w.names, ",") or "", w and ("%.2f"):format(w.avg) or "")
+        w and table.concat(w.names, ",") or "", w and ("%.2f"):format(w.avg) or "", w and w.theme or "")
     self:SendList("SHOWN", db.round, SortedKeys(db.shown))
     local res = {}
     for name, r in pairs(db.results) do
@@ -277,6 +277,17 @@ function TC:CloseLocal(id, contestant, avg, count, total)
     db.shown[contestant] = true
     db.results[contestant] = { avg = avg, count = count, total = total }
     if ns.History then ns.History:OnRoundClosed(contestant, avg, count, total) end
+end
+
+-- A new theme starts a fresh ranking: everyone can showcase again and the previous
+-- theme's results stay in the gallery history.
+function TC:StartThemeLocal()
+    wipe(db.results)
+    wipe(db.shown)
+    self:ClearRoundVotes()
+    db.phase = "IDLE"
+    db.contestant = nil
+    db.winner = nil
 end
 
 function TC:ResetAllLocal()
@@ -339,8 +350,8 @@ function Handlers.CLOSE(self, sender, id, contestant, avg, count, total)
     self:CloseLocal(id, contestant, tonumber(avg) or 0, tonumber(count) or 0, tonumber(total) or 0)
 end
 
-function Handlers.WINNER(self, sender, names, avg)
-    db.winner = { names = Split(names, ","), avg = tonumber(avg) or 0 }
+function Handlers.WINNER(self, sender, names, avg, theme)
+    db.winner = { names = Split(names, ","), avg = tonumber(avg) or 0, theme = (theme ~= "" and theme) or nil }
     PlaySound(SOUNDKIT.UI_RAID_BOSS_WHISPER_WARNING or SOUNDKIT.RAID_WARNING)
     if ns.Gallery then ns.Gallery:Show() end
 end
@@ -353,14 +364,15 @@ function Handlers.RESETALL(self)
     self:ResetAllLocal()
 end
 
-function Handlers.STATE(self, sender, round, phase, contestant, winners, winAvg)
+function Handlers.STATE(self, sender, round, phase, contestant, winners, winAvg, winTheme)
     round = tonumber(round) or 0
     if round ~= db.round then self:ClearRoundVotes() end
     db.round = round
     db.phase = (phase == "VOTING" or phase == "CLOSED") and phase or "IDLE"
     db.contestant = contestant ~= "" and contestant or nil
     if winners and winners ~= "" then
-        db.winner = { names = Split(winners, ","), avg = tonumber(winAvg) or 0 }
+        db.winner = { names = Split(winners, ","), avg = tonumber(winAvg) or 0,
+            theme = (winTheme and winTheme ~= "") and winTheme or nil }
     else
         db.winner = nil
     end
@@ -636,12 +648,18 @@ function TC:CmdAnnounceWinner()
             winners[#winners + 1] = r.name
             shortNames[#shortNames + 1] = self:Short(r.name)
         end
-        db.winner = { names = winners, avg = best }
-        self:Send("WINNER", table.concat(winners, ","), ("%.2f"):format(best))
-        if #winners == 1 then
-            self:Announce((L["The transmog winner is %s with %.2f points!"]):format(shortNames[1], best), true)
+        local theme = db.currentTheme
+        db.winner = { names = winners, avg = best, theme = theme }
+        self:Send("WINNER", table.concat(winners, ","), ("%.2f"):format(best), theme or "")
+        local who = table.concat(shortNames, ", ")
+        if theme and #winners == 1 then
+            self:Announce((L["The winner of %s is %s with %.2f points!"]):format(theme, who, best), true)
+        elseif theme then
+            self:Announce((L["It's a tie in %s! %s with %.2f points!"]):format(theme, who, best), true)
+        elseif #winners == 1 then
+            self:Announce((L["The transmog winner is %s with %.2f points!"]):format(who, best), true)
         else
-            self:Announce((L["It's a tie! %s with %.2f points!"]):format(table.concat(shortNames, ", "), best), true)
+            self:Announce((L["It's a tie! %s with %.2f points!"]):format(who, best), true)
         end
         for i = 1, math.min(3, #ranking) do
             local r = ranking[i]

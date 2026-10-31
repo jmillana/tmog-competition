@@ -192,8 +192,8 @@ function UI:BuildRanking(f)
     header:SetHeight(20)
     self:LayoutRow(header, 10, C.muted)
     header.rank:SetText("#")
-    S:Static(header.name, "RANKING")
-    header.name:SetTextColor(unpack(C.accent))
+    header.name:SetTextColor(unpack(C.accent)) -- "RANKING - <theme>", set in Refresh
+    self.rankHeader = header
     S:Static(header.score, "SCORE")
     S:Static(header.votes, "VOTES")
 
@@ -418,10 +418,16 @@ function UI:Refresh()
     self.winnerBanner:SetShown(hasWinner)
     if hasWinner then
         local label = #db.winner.names > 1 and L["WINNERS"] or L["WINNER"]
-        self.winnerBanner.text:SetText((L["%s  %s  %s"]):format(label, self:NameList(db.winner.names),
-            S:Color(C.gold, (L["%.2f"]):format(db.winner.avg))))
+        if db.winner.theme then label = label .. " - " .. S:Upper(db.winner.theme) end
+        self.winnerBanner.text:SetText(("%s  %s  %s"):format(label, self:NameList(db.winner.names),
+            S:Color(C.gold, ("%.2f"):format(db.winner.avg))))
     end
     self.rankingCard:SetPoint("TOPLEFT", PAD, hasWinner and -466 or -428)
+
+    -- The ranking covers the current theme only.
+    local rankTitle = L["RANKING"]
+    if db.currentTheme then rankTitle = rankTitle .. " - " .. S:Upper(db.currentTheme) end
+    self.rankHeader.name:SetText(rankTitle)
 
     self:RefreshRanking(db)
 

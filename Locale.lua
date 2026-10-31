@@ -90,6 +90,10 @@ strings.esES = {
     ["No results yet."] = "Todavía no hay resultados.",
     ["The transmog winner is %s with %.2f points!"] = "¡%s gana la competición de transfiguración con %.2f puntos!",
     ["It's a tie! %s with %.2f points!"] = "¡Empate! %s con %.2f puntos.",
+    ["The winner of %s is %s with %.2f points!"] = "¡Ganador de la temática %s: %s con %.2f puntos!",
+    ["It's a tie in %s! %s with %.2f points!"] = "¡Empate en la temática %s! %s con %.2f puntos.",
+    ["This theme has results but no winner was announced. Spin anyway?\nIts ranking stays in the gallery."] =
+        "Esta temática tiene resultados pero no se ha anunciado ganador. ¿Girar de todos modos?\nSu clasificación se guarda en la galería.",
     ["%d. %s - %.2f (%d votes)"] = "%d. %s - %.2f (%d votos)",
     ["%d player(s) haven't showcased yet. Announce the winner anyway?"] =
         "%d jugador(es) aún no han desfilado. ¿Anunciar al ganador de todos modos?",

@@ -68,6 +68,7 @@ function Themes:PickLocal(name)
     if i then table.remove(db.themes, i) end
     if not IndexOf(db.usedThemes, name) then table.insert(db.usedThemes, name) end
     db.currentTheme = name
+    TC:StartThemeLocal() -- fresh ranking, winner and shuffle pool for the new theme
     if ns.History then ns.History:OnThemePicked() end
 end
 
@@ -126,7 +127,21 @@ function Themes:CmdSpin()
         TC.Print(L["The theme pool is empty. Add themes or reset the used ones."])
         return
     end
+    if TC.db.phase == "VOTING" then
+        TC.Print(L["Close the current voting first."])
+        return
+    end
+    -- Picking a theme starts a fresh ranking; warn if this one was never announced.
+    if next(TC.db.results) and not TC.db.winner then
+        TC:Confirm(L["This theme has results but no winner was announced. Spin anyway?\nIts ranking stays in the gallery."],
+            function() self:Spin() end)
+        return
+    end
+    self:Spin()
+end
 
+function Themes:Spin()
+    if ns.Wheel:IsSpinning() or self.pickPending then return end
     TC:Send("THEMESPIN")
     ns.Wheel:StartSpin(Copy(TC.db.themes))
     self.pickPending = true

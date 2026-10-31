@@ -11,6 +11,10 @@ Run transmog competitions in a party or raid. Every participant needs the addon 
 
 Nobody showcases twice until the leader clicks **Reset Pool**. **Reset All** clears scores too.
 
+The ranking and winner are **per theme**. When the carousel picks a new theme, the ranking, winner and shuffle pool start
+fresh so everyone showcases again. Earlier themes stay in the gallery. The leader can't spin while voting is open, and is
+asked to confirm before spinning away from a theme whose winner was never announced.
+
 Only the group leader can shuffle, start/close rounds, announce the winner and reset. Other clients ignore those messages from anyone else.
 
 ## Language and settings
