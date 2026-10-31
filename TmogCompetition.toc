@@ -15,3 +15,4 @@ UI.lua
 Explore.lua
 Gallery.lua
 Wheel.lua
+Settings.lua
