@@ -6,8 +6,8 @@
 ## SavedVariables: TmogCompetitionDB
 
 Locale.lua
-Locales\enUS.lua
-Locales\esES.lua
+Locales/enUS.lua
+Locales/esES.lua
 Style.lua
 TmogCompetition.lua
 History.lua
