@@ -6,16 +6,23 @@
 ## IconTexture: Interface/AddOns/TmogCompetition/Media/Icon
 ## SavedVariables: TmogCompetitionDB
 
-Locale.lua
+Locales/Locale.lua
 Locales/enUS.lua
 Locales/esES.lua
-Style.lua
-TmogCompetition.lua
-History.lua
-Outfit.lua
-Themes.lua
-UI.lua
-Explore.lua
-Gallery.lua
-Wheel.lua
-Settings.lua
+UI/Style.lua
+Core/Init.lua
+Core/Group.lua
+Core/Comm.lua
+Core/State.lua
+Core/Handlers.lua
+Core/Queries.lua
+Core/Commands.lua
+Core/Events.lua
+Modules/History.lua
+Modules/Outfit.lua
+Modules/Themes.lua
+UI/MainWindow.lua
+UI/Explore.lua
+UI/Gallery.lua
+UI/Wheel.lua
+UI/Settings.lua

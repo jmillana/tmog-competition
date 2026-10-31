@@ -4,7 +4,7 @@
 -- theme in the highlighted middle row, plus one above and one below. With a
 -- single theme left, all three rows show it.
 --
--- The module keeps the name "Wheel" because the spin flow (Themes.lua) drives
+-- The module keeps the name "Wheel" because the spin flow (Modules/Themes.lua) drives
 -- it through StartSpin / Land / Abort / IsSpinning.
 local ADDON, ns = ...
 local TC, S = ns.TC, ns.Style

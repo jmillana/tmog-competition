@@ -1,6 +1,6 @@
 -- TmogCompetition: gallery of saved transmogs.
 -- Top tabs: Bookmarks + one per competition. Sub-tabs: one per theme picked in that competition.
--- Everything here is local to this client (see History.lua).
+-- Everything here is local to this client (see Modules/History.lua).
 local ADDON, ns = ...
 local TC, S, Outfit = ns.TC, ns.Style, ns.Outfit
 local L = ns.L

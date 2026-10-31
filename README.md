@@ -33,7 +33,7 @@ English or Español. The change applies instantly, no reload needed. The setting
 announcement and auto-open options.
 
 ### Translating
-Strings live in `Locales/enUS.lua` (also the fallback) and `Locales/esES.lua`; `Locale.lua` is the lookup core.
+Strings live in `Locales/enUS.lua` (also the fallback) and `Locales/esES.lua`; `Locales/Locale.lua` is the lookup core.
 - Keys are identifiers grouped by subsystem prefix (`CORE_`, `MAIN_`, `GALLERY_`, `DRAW_`, `EXPLORE_`, `SETTINGS_`, ...),
   so rewording the English never breaks a translation.
 - Placeholders are named (`{player}`, `{round}`, `{score:.2f}`) and can be reordered freely in a translation.
@@ -113,3 +113,22 @@ How each outfit is drawn:
 
 During voting the main window shows the contestant live when they're in range, and their shared outfit otherwise.
 `/tmogc outfit` re-captures and re-sends your own outfit if something went wrong.
+
+## Code layout
+Files load in the order listed in `TmogCompetition.toc`. Modules share state through the addon namespace
+(`ns.TC`, `ns.UI`, ...), so they only depend on each other at runtime.
+
+```
+Locales/   Locale.lua (lookup core), enUS.lua, esES.lua
+Core/      Init.lua      core object, saved-variable defaults, helpers (ns.Util)
+           Group.lua     group roster and leader tracking
+           Comm.lua      send queue, sync, message dispatch
+           State.lua     local state changes
+           Handlers.lua  core message handlers
+           Queries.lua   rankings, pool and scoreboard for the UI
+           Commands.lua  player and leader actions
+           Events.lua    game events and slash commands
+Modules/   History.lua (gallery history), Outfit.lua (outfit capture/sync), Themes.lua (theme pool and draw)
+UI/        Style.lua, MainWindow.lua, Explore.lua, Gallery.lua, Wheel.lua, Settings.lua
+Media/     logo and icon
+```
