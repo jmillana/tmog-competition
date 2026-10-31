@@ -7,7 +7,7 @@ local C = S.C
 local UI = {}
 ns.UI = UI
 
-local WIDTH, HEIGHT = 400, 700
+local WIDTH, HEIGHT = 400, 750
 local PAD = 14
 local INNER = WIDTH - 2 * PAD
 local ROW_HEIGHT = 22
@@ -122,7 +122,7 @@ function UI:BuildLeaderControls(f)
 
     local bar = CreateFrame("Frame", nil, f)
     bar:SetPoint("TOPLEFT", PAD, -362)
-    bar:SetSize(INNER, 54)
+    bar:SetSize(INNER, 82)
     self.leaderBar = bar
 
     local w = math.floor((INNER - 8) / 3)
@@ -147,6 +147,10 @@ function UI:BuildLeaderControls(f)
     self.refreshBtn = S:Button(bar, "Refresh", w, 22, "ghost", function() TC:CmdRefresh() end,
         "Ask everyone in the group to report that they have the addon, and resend the competition state.")
     place(self.refreshBtn, 2, 1)
+    self.finishBtn = S:Button(bar, "Finish Competition", INNER, 26, "secondary",
+        function() TC:CmdFinishCompetition() end,
+        "End the competition and announce the overall ranking (sum of each player's theme scores).")
+    self.finishBtn:SetPoint("TOPLEFT", 0, -56)
 
     self.notLeader = S:Panel(f, S.Alpha(C.panel, 0.5))
     self.notLeader:SetPoint("TOPLEFT", PAD, -350)
@@ -186,24 +190,28 @@ function UI:BuildRanking(f)
     card:SetPoint("BOTTOMRIGHT", -PAD, 50)
     self.rankingCard = card
 
+    -- One tab per category (theme) plus Overall.
+    self.rankTabs = S:TabStrip(card, INNER - 12, 26, 11, function(key)
+        self.rankTab = key
+        self:Refresh()
+    end)
+    self.rankTabs:SetPoint("TOPLEFT", 6, -4)
+
     local header = CreateFrame("Frame", nil, card)
-    header:SetPoint("TOPLEFT", 6, -6)
-    header:SetPoint("TOPRIGHT", -6, -6)
+    header:SetPoint("TOPLEFT", 6, -34)
+    header:SetPoint("TOPRIGHT", -6, -34)
     header:SetHeight(20)
     self:LayoutRow(header, 10, C.muted)
     header.rank:SetText("#")
-    header.name:SetTextColor(unpack(C.accent)) -- "RANKING - <theme>", set in Refresh
-    self.rankHeader = header
-    S:Static(header.score, "SCORE")
-    S:Static(header.votes, "VOTES")
+    self.rankHeader = header -- column titles depend on the tab, set in RefreshRanking
 
     local divider = S:Divider(card)
-    divider:SetPoint("TOPLEFT", 6, -28)
-    divider:SetPoint("TOPRIGHT", -6, -28)
+    divider:SetPoint("TOPLEFT", 6, -56)
+    divider:SetPoint("TOPRIGHT", -6, -56)
     divider:SetHeight(1)
 
     local scroll = S:ScrollArea(card)
-    scroll:SetPoint("TOPLEFT", 6, -32)
+    scroll:SetPoint("TOPLEFT", 6, -60)
     scroll:SetPoint("BOTTOMRIGHT", -6, 6)
     self.scroll = scroll
     self.rows = {}
@@ -354,14 +362,69 @@ function UI:RefreshVoting(db, me)
     end
 end
 
+local function CategoryName(theme)
+    return theme or L["No theme"]
+end
+
+-- Builds the tab list and returns the selected category (nil for Overall).
+function UI:RefreshRankTabs(db)
+    local categories = TC:GetCategories()
+    local items, byKey = {}, {}
+    local hasResults = false
+    for _, cat in ipairs(categories) do
+        if next(cat.results) then hasResults = true end
+    end
+    if hasResults or db.finished then items[#items + 1] = { key = "overall", text = L["Overall"] } end
+    for _, cat in ipairs(categories) do
+        local text = CategoryName(cat.theme)
+        items[#items + 1] = { key = cat.key, text = cat.current and S:Color(C.success, text) or text }
+        byKey[cat.key] = cat
+    end
+
+    -- Jump back to the default tab when the competition moves on (new theme, finish).
+    local context = ("%s|%s|%d"):format(tostring(db.finished), tostring(db.currentTheme), #db.themeResults)
+    if context ~= self.rankContext then
+        self.rankContext = context
+        self.rankTab = nil
+    end
+    local valid = self.rankTab == "overall" and items[1] and items[1].key == "overall" or byKey[self.rankTab]
+    if not valid then self.rankTab = db.finished and "overall" or "current" end
+    if self.rankTab == "current" and not byKey.current then self.rankTab = "overall" end
+
+    self.rankTabs:SetItems(items, self.rankTab)
+    return byKey[self.rankTab]
+end
+
 function UI:RefreshRanking(db)
-    local entries = TC:GetScoreboard()
+    local category = self:RefreshRankTabs(db)
+    local header = self.rankHeader
+    local overall = self.rankTab == "overall"
+    header.name:SetText(L["PLAYER"])
+    header.score:SetText(overall and L["POINTS"] or L["SCORE"])
+    header.votes:SetText(overall and L["THEMES"] or L["VOTES"])
+
+    local entries
+    if overall then
+        entries = TC:GetOverallRanking()
+    elseif category and category.current then
+        entries = TC:GetScoreboard() -- includes players still waiting to showcase
+    else
+        entries = TC:RankResults(category and category.results or {})
+    end
+
     for i, e in ipairs(entries) do
         local row = self:GetRow(i)
         row:Show()
         row.name:SetText(self:ColoredName(e.name))
-        local onStage = db.phase == "VOTING" and e.name == db.contestant
-        if e.avg then
+        local onStage = not overall and category and category.current
+            and db.phase == "VOTING" and e.name == db.contestant
+        if overall then
+            row.rank:SetText(e.rank)
+            row.rank:SetTextColor(unpack(S:RankColor(e.rank)))
+            row.score:SetText(("%.2f"):format(e.score))
+            row.score:SetTextColor(unpack(e.rank == 1 and C.gold or C.text))
+            row.votes:SetText(e.themes)
+        elseif e.avg then
             row.rank:SetText(e.rank)
             row.rank:SetTextColor(unpack(S:RankColor(e.rank)))
             row.score:SetText((L["%.2f"]):format(e.avg))
@@ -409,25 +472,33 @@ function UI:Refresh()
     self.leaderLabel:SetShown(isLeader)
     self.leaderBar:SetShown(isLeader)
     self.notLeader:SetShown(not isLeader)
-    self.nextBtn:SetEnabled(db.phase ~= "VOTING" and #pool > 0)
+    -- After a finish, Shuffle & Start begins the next competition.
+    self.nextBtn:SetEnabled(db.phase ~= "VOTING" and (#pool > 0 or db.finished))
     self.closeBtn:SetEnabled(db.phase == "VOTING")
-    self.winnerBtn:SetEnabled(db.phase ~= "VOTING" and next(db.results) ~= nil)
+    self.winnerBtn:SetEnabled(db.phase ~= "VOTING" and not db.finished and next(db.results) ~= nil)
+    self.finishBtn:SetEnabled(db.phase ~= "VOTING" and not db.finished and #TC:GetOverallRanking() > 0)
+    self.finishBtn:SetText(db.finished and L["Competition finished"] or L["Finish Competition"])
 
-    -- Winner banner; the ranking moves up when there is none
-    local hasWinner = db.winner and #db.winner.names > 0
-    self.winnerBanner:SetShown(hasWinner)
-    if hasWinner then
-        local label = #db.winner.names > 1 and L["WINNERS"] or L["WINNER"]
-        if db.winner.theme then label = label .. " - " .. S:Upper(db.winner.theme) end
-        self.winnerBanner.text:SetText(("%s  %s  %s"):format(label, self:NameList(db.winner.names),
-            S:Color(C.gold, ("%.2f"):format(db.winner.avg))))
+    -- Winner banner: overall winner once finished, otherwise the current theme's winner.
+    local ov = db.finished and db.overallWinner
+    local w = db.winner
+    local hasWinner = (ov and #ov.names > 0) or (w and #w.names > 0)
+    self.winnerBanner:SetShown(hasWinner and true or false)
+    if ov and #ov.names > 0 then
+        local label = #ov.names > 1 and L["OVERALL WINNERS"] or L["OVERALL WINNER"]
+        self.winnerBanner.text:SetText(("%s  %s  %s"):format(label, self:NameList(ov.names),
+            S:Color(C.gold, ("%.2f"):format(ov.score))))
+    elseif hasWinner then
+        local label = #w.names > 1 and L["WINNERS"] or L["WINNER"]
+        if w.theme then label = label .. " - " .. S:Upper(w.theme) end
+        self.winnerBanner.text:SetText(("%s  %s  %s"):format(label, self:NameList(w.names),
+            S:Color(C.gold, ("%.2f"):format(w.avg))))
     end
-    self.rankingCard:SetPoint("TOPLEFT", PAD, hasWinner and -466 or -428)
 
-    -- The ranking covers the current theme only.
-    local rankTitle = L["RANKING"]
-    if db.currentTheme then rankTitle = rankTitle .. " - " .. S:Upper(db.currentTheme) end
-    self.rankHeader.name:SetText(rankTitle)
+    -- Leader controls take more room than the "only the leader" note.
+    local top = isLeader and -454 or -400
+    self.winnerBanner:SetPoint("TOPLEFT", PAD, top)
+    self.rankingCard:SetPoint("TOPLEFT", PAD, hasWinner and (top - 38) or top)
 
     self:RefreshRanking(db)
 
@@ -450,6 +521,16 @@ end
 function UI:Show()
     self:Build()
     self.frame:Show()
+end
+
+-- Opens the window on the Overall tab (used when the competition finishes).
+function UI:ShowOverall()
+    self:Build()
+    self.frame:Show()
+    self.rankContext = nil
+    self:Refresh()
+    self.rankTab = "overall"
+    self:Refresh()
 end
 
 function UI:Toggle()

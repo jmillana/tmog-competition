@@ -92,8 +92,31 @@ strings.esES = {
     ["It's a tie! %s with %.2f points!"] = "¡Empate! %s con %.2f puntos.",
     ["The winner of %s is %s with %.2f points!"] = "¡Ganador de la temática %s: %s con %.2f puntos!",
     ["It's a tie in %s! %s with %.2f points!"] = "¡Empate en la temática %s! %s con %.2f puntos.",
-    ["This theme has results but no winner was announced. Spin anyway?\nIts ranking stays in the gallery."] =
-        "Esta temática tiene resultados pero no se ha anunciado ganador. ¿Girar de todos modos?\nSu clasificación se guarda en la galería.",
+    ["This theme has results but no winner was announced. Spin anyway?\nIts results stay in its ranking tab."] =
+        "Esta temática tiene resultados pero no se ha anunciado ganador. ¿Girar de todos modos?\nSus resultados se mantienen en su pestaña de clasificación.",
+
+    -- Finishing the competition
+    ["Finish Competition"] = "Terminar competición",
+    ["Competition finished"] = "Competición terminada",
+    ["End the competition and announce the overall ranking (sum of each player's theme scores)."] =
+        "Termina la competición y anuncia la clasificación general (suma de las notas de cada temática).",
+    ["The competition is already finished."] = "La competición ya ha terminado.",
+    ["Finish the competition and announce the overall ranking?"] =
+        "¿Terminar la competición y anunciar la clasificación general?",
+    ["The competition is over! Overall winner: %s with %.2f points!"] =
+        "¡La competición ha terminado! Ganador general: %s con %.2f puntos.",
+    ["The competition is over! Overall tie: %s with %.2f points!"] =
+        "¡La competición ha terminado! Empate general: %s con %.2f puntos.",
+    ["%d. %s - %.2f (%d themes)"] = "%d. %s - %.2f (%d temáticas)",
+    ["Overall"] = "General",
+    ["PLAYER"] = "JUGADOR",
+    ["POINTS"] = "PUNTOS",
+    ["THEMES"] = "TEMÁTICAS",
+    ["OVERALL WINNER"] = "GANADOR GENERAL",
+    ["OVERALL WINNERS"] = "GANADORES GENERALES",
+    ["Restart the round counter for each new competition"] = "Reiniciar el contador de rondas en cada competición",
+    ["When a finished competition is followed by a new one, or after Reset All, rounds count from 1 again (leader only)."] =
+        "Al empezar una competición nueva tras terminar la anterior, o tras Reiniciar todo, las rondas vuelven a contar desde 1 (solo el líder).",
     ["%d. %s - %.2f (%d votes)"] = "%d. %s - %.2f (%d votos)",
     ["%d player(s) haven't showcased yet. Announce the winner anyway?"] =
         "%d jugador(es) aún no han desfilado. ¿Anunciar al ganador de todos modos?",

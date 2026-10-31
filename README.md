@@ -15,6 +15,11 @@ The ranking and winner are **per theme**. When the carousel picks a new theme, t
 fresh so everyone showcases again. Earlier themes stay in the gallery. The leader can't spin while voting is open, and is
 asked to confirm before spinning away from a theme whose winner was never announced.
 
+The ranking has a tab per category (theme) plus **Overall**. When every theme is done, the leader clicks
+**Finish Competition**: the overall ranking (sum of each player's theme scores) is announced with the top 3 and shown to
+everyone. The next Shuffle & Start or spin begins a new competition. Turn on **Restart the round counter for each new
+competition** in settings to count rounds from 1 again (also applies to Reset All).
+
 Only the group leader can shuffle, start/close rounds, announce the winner and reset. Other clients ignore those messages from anyone else.
 
 ## Language and settings
@@ -44,7 +49,9 @@ announcement and auto-open options. Translations live in `Locale.lua`, where the
 | `VOTE id score` | voter | a vote |
 | `CLOSE id name avg count total` | leader | official round result |
 | `WINNER names avg` | leader | winner(s) |
-| `RESETPOOL` / `RESETALL` | leader | resets |
+| `RESETPOOL` / `RESETALL restartRounds` | leader | resets |
+| `FINISH names score` / `NEWCOMP restartRounds` | leader | finish (overall winner) / start a new competition |
+| `TRCOUNT n` + list `TR` | leader | sync of finished themes (`@theme`, then results) |
 | `STATE round phase contestant winners avg` | leader | sync header |
 | `L tag id more items` | leader | chunked list (`VOTERS`, `VOTED`, `SHOWN`, `RES`) |
 | `OUTFIT race sex more items` | contestant | their outfit (`slot:appearance:secondary:illusion`, chunked) |

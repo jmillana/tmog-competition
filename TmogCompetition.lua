@@ -36,6 +36,10 @@ local DEFAULTS = {
     usedThemes = {}, -- themes already picked
     currentTheme = nil,
     language = "auto", -- "auto" follows the game client, or "enUS" / "esES"
+    themeResults = {},   -- finished themes of this competition: { { theme = name|nil, results = {...} }, ... }
+    finished = false,    -- the leader finished the competition (overall ranking announced)
+    overallWinner = nil, -- { names = {...}, score = n }
+    restartRounds = false, -- leader option: a new competition restarts the round counter
     announce = true,
     autoShow = true,
     frame = nil,
@@ -233,9 +237,18 @@ end
 
 function TC:SendSync()
     if not IsInGroup() or not self:IsLeader() then return end
-    local w = db.winner
+    local w, ov = db.winner, db.overallWinner
     self:Send("STATE", db.round, db.phase, db.contestant,
-        w and table.concat(w.names, ",") or "", w and ("%.2f"):format(w.avg) or "", w and w.theme or "")
+        w and table.concat(w.names, ",") or "", w and ("%.2f"):format(w.avg) or "", w and w.theme or "",
+        db.finished and 1 or 0, ov and table.concat(ov.names, ",") or "", ov and ("%.2f"):format(ov.score) or "")
+    self:Send("TRCOUNT", #db.themeResults)
+    for i, entry in ipairs(db.themeResults) do
+        local items = { "@" .. (entry.theme or "") }
+        for name, r in pairs(entry.results) do
+            items[#items + 1] = ("%s:%.2f:%d:%d"):format(name, r.avg, r.count, r.total)
+        end
+        self:SendList("TR", i, items)
+    end
     self:SendList("SHOWN", db.round, SortedKeys(db.shown))
     local res = {}
     for name, r in pairs(db.results) do
@@ -279,10 +292,21 @@ function TC:CloseLocal(id, contestant, avg, count, total)
     if ns.History then ns.History:OnRoundClosed(contestant, avg, count, total) end
 end
 
--- A new theme starts a fresh ranking: everyone can showcase again and the previous
--- theme's results stay in the gallery history.
-function TC:StartThemeLocal()
+-- Moves the current theme's results into db.themeResults (kept for the category tabs
+-- and the overall ranking). Must run before db.currentTheme changes.
+function TC:ArchiveCurrent()
+    if next(db.results) then
+        local copy = {}
+        for name, r in pairs(db.results) do copy[name] = { avg = r.avg, count = r.count, total = r.total } end
+        table.insert(db.themeResults, { theme = db.currentTheme, results = copy })
+    end
     wipe(db.results)
+end
+
+-- A new theme starts a fresh ranking: everyone can showcase again. The previous
+-- theme's results move to its own category tab.
+function TC:StartThemeLocal()
+    self:ArchiveCurrent()
     wipe(db.shown)
     self:ClearRoundVotes()
     db.phase = "IDLE"
@@ -290,15 +314,49 @@ function TC:StartThemeLocal()
     db.winner = nil
 end
 
-function TC:ResetAllLocal()
+-- Clears the competition state. resetRound restarts the round counter.
+local function ClearCompetition(resetRound)
     wipe(db.results)
+    wipe(db.themeResults)
     wipe(db.shown)
-    wipe(db.outfits)
-    self:ClearRoundVotes()
+    TC:ClearRoundVotes()
     db.phase = "IDLE"
     db.contestant = nil
     db.winner = nil
+    db.finished = false
+    db.overallWinner = nil
+    if resetRound then db.round = 0 end
+end
+
+function TC:ResetAllLocal(resetRound)
+    ClearCompetition(resetRound)
+    wipe(db.outfits)
     if ns.History then ns.History:EndCompetition() end
+end
+
+-- Leader finished the competition: every theme is archived and the overall winner kept.
+function TC:FinishLocal(names, score)
+    self:ArchiveCurrent()
+    self:ClearRoundVotes()
+    db.phase = "IDLE"
+    db.contestant = nil
+    db.finished = true
+    db.overallWinner = { names = names, score = score }
+    if ns.History then ns.History:EndCompetition() end
+end
+
+-- First action after a finished competition starts a new one.
+function TC:NewCompetitionLocal(resetRound)
+    ClearCompetition(resetRound)
+    db.currentTheme = nil
+end
+
+-- Leader side: if the last competition was finished, start a new one for everyone.
+function TC:EnsureNewCompetition()
+    if not db.finished then return end
+    local reset = db.restartRounds and true or false
+    self:NewCompetitionLocal(reset)
+    self:Send("NEWCOMP", reset and 1 or 0)
 end
 
 function TC:CanVote(name)
@@ -312,6 +370,7 @@ local Handlers, ListHandlers = {}, {}
 local LEADER_ONLY = {
     PING = true, ROUND = true, CLOSE = true, WINNER = true,
     RESETPOOL = true, RESETALL = true, STATE = true, L = true,
+    FINISH = true, NEWCOMP = true, TRCOUNT = true,
 }
 -- Other files (Outfit.lua, Themes.lua) register their own message types here.
 TC.Handlers, TC.ListHandlers, TC.LEADER_ONLY = Handlers, ListHandlers, LEADER_ONLY
@@ -360,11 +419,33 @@ function Handlers.RESETPOOL(self)
     wipe(db.shown)
 end
 
-function Handlers.RESETALL(self)
-    self:ResetAllLocal()
+function Handlers.RESETALL(self, sender, resetRound)
+    self:ResetAllLocal(resetRound == "1")
 end
 
-function Handlers.STATE(self, sender, round, phase, contestant, winners, winAvg, winTheme)
+function Handlers.FINISH(self, sender, names, score)
+    self:FinishLocal(Split(names, ","), tonumber(score) or 0)
+    PlaySound(SOUNDKIT.UI_RAID_BOSS_WHISPER_WARNING or SOUNDKIT.RAID_WARNING)
+    if ns.UI then ns.UI:ShowOverall() end
+end
+
+function Handlers.NEWCOMP(self, sender, resetRound)
+    self:NewCompetitionLocal(resetRound == "1")
+end
+
+-- Sync of archived themes: TRCOUNT n, then one "TR" list per theme ("@theme", "name:avg:count:total", ...).
+function Handlers.TRCOUNT(self, sender, count)
+    count = tonumber(count) or 0
+    for i = #db.themeResults, count + 1, -1 do table.remove(db.themeResults, i) end
+end
+
+function Handlers.STATE(self, sender, round, phase, contestant, winners, winAvg, winTheme, finished, ovNames, ovScore)
+    db.finished = finished == "1"
+    if ovNames and ovNames ~= "" then
+        db.overallWinner = { names = Split(ovNames, ","), score = tonumber(ovScore) or 0 }
+    else
+        db.overallWinner = nil
+    end
     round = tonumber(round) or 0
     if round ~= db.round then self:ClearRoundVotes() end
     db.round = round
@@ -408,6 +489,19 @@ end
 function ListHandlers.SHOWN(self, id, items)
     wipe(db.shown)
     for _, name in ipairs(items) do db.shown[name] = true end
+end
+
+function ListHandlers.TR(self, id, items)
+    if not id or not items[1] then return end
+    local theme = items[1]:match("^@(.*)$")
+    local results = {}
+    for i = 2, #items do
+        local name, avg, count, total = strsplit(":", items[i])
+        if name and avg then
+            results[name] = { avg = tonumber(avg) or 0, count = tonumber(count) or 0, total = tonumber(total) or 0 }
+        end
+    end
+    db.themeResults[id] = { theme = (theme ~= "" and theme) or nil, results = results }
 end
 
 function ListHandlers.RES(self, id, items)
@@ -464,8 +558,13 @@ end
 
 -- Results sorted by average, then vote count, then name. Ties share a rank.
 function TC:GetRanking()
+    return self:RankResults(db.results)
+end
+
+-- Ranks a results table ({ [name] = { avg, count, total } }) by average.
+function TC:RankResults(results)
     local list = {}
-    for name, r in pairs(db.results) do
+    for name, r in pairs(results) do
         list[#list + 1] = { name = name, avg = r.avg, count = r.count, total = r.total }
     end
     table.sort(list, function(a, b)
@@ -476,6 +575,47 @@ function TC:GetRanking()
     for i, r in ipairs(list) do
         local prev = list[i - 1]
         r.rank = (prev and prev.avg == r.avg) and prev.rank or i
+    end
+    return list
+end
+
+-- Categories for the ranking tabs: every finished theme, plus the running one.
+-- Each is { key = index|"current", theme = name|nil, results = {...}, current = bool }.
+function TC:GetCategories()
+    local list = {}
+    for i, entry in ipairs(db.themeResults) do
+        list[#list + 1] = { key = i, theme = entry.theme, results = entry.results }
+    end
+    if not db.finished then
+        list[#list + 1] = { key = "current", theme = db.currentTheme, results = db.results, current = true }
+    end
+    return list
+end
+
+-- Overall ranking: sum of each player's theme averages across the competition.
+function TC:GetOverallRanking()
+    local totals = {}
+    for _, cat in ipairs(self:GetCategories()) do
+        for name, r in pairs(cat.results) do
+            local t = totals[name] or { name = name, score = 0, themes = 0 }
+            t.score = t.score + r.avg
+            t.themes = t.themes + 1
+            totals[name] = t
+        end
+    end
+    local list = {}
+    for _, t in pairs(totals) do
+        t.score = Round2(t.score)
+        list[#list + 1] = t
+    end
+    table.sort(list, function(a, b)
+        if a.score ~= b.score then return a.score > b.score end
+        if a.themes ~= b.themes then return a.themes > b.themes end
+        return a.name < b.name
+    end)
+    for i, t in ipairs(list) do
+        local prev = list[i - 1]
+        t.rank = (prev and prev.score == t.score) and prev.rank or i
     end
     return list
 end
@@ -578,6 +718,7 @@ function TC:CmdNextRound()
         Print(L["Close the current voting before starting the next round."])
         return
     end
+    self:EnsureNewCompetition()
     local pool = self:GetPool()
     if #pool == 0 then
         Print(L["Everyone has already showcased. Reset the pool to start again."])
@@ -687,8 +828,49 @@ end
 function TC:CmdResetAll()
     if not self:RequireLeader() then return end
     self:Confirm(L["Reset the whole competition? All scores and the shuffle pool will be cleared."], function()
-        self:ResetAllLocal()
-        self:Send("RESETALL")
+        local reset = db.restartRounds and true or false
+        self:ResetAllLocal(reset)
+        self:Send("RESETALL", reset and 1 or 0)
+        self:Refresh()
+    end)
+end
+
+function TC:CmdFinishCompetition()
+    if not self:RequireLeader() then return end
+    if db.phase == "VOTING" then
+        Print(L["Close the current voting first."])
+        return
+    end
+    if db.finished then
+        Print(L["The competition is already finished."])
+        return
+    end
+    local ranking = self:GetOverallRanking()
+    if #ranking == 0 then
+        Print(L["No results yet."])
+        return
+    end
+    self:Confirm(L["Finish the competition and announce the overall ranking?"], function()
+        local best = ranking[1].score
+        local winners, shortNames = {}, {}
+        for _, r in ipairs(ranking) do
+            if r.score ~= best then break end
+            winners[#winners + 1] = r.name
+            shortNames[#shortNames + 1] = self:Short(r.name)
+        end
+        self:FinishLocal(winners, best)
+        self:Send("FINISH", table.concat(winners, ","), ("%.2f"):format(best))
+        local who = table.concat(shortNames, ", ")
+        if #winners == 1 then
+            self:Announce((L["The competition is over! Overall winner: %s with %.2f points!"]):format(who, best), true)
+        else
+            self:Announce((L["The competition is over! Overall tie: %s with %.2f points!"]):format(who, best), true)
+        end
+        for i = 1, math.min(3, #ranking) do
+            local r = ranking[i]
+            self:Announce((L["%d. %s - %.2f (%d themes)"]):format(r.rank, self:Short(r.name), r.score, r.themes))
+        end
+        if ns.UI then ns.UI:ShowOverall() end
         self:Refresh()
     end)
 end
@@ -770,6 +952,7 @@ local COMMANDS = {
     resetpool = "CmdResetPool",
     resetall = "CmdResetAll",
     sync = "CmdRefresh",
+    finish = "CmdFinishCompetition",
 }
 
 SLASH_TMOGCOMPETITION1 = "/tmogc"
@@ -800,6 +983,6 @@ SlashCmdList.TMOGCOMPETITION = function(input)
         db.autoShow = not db.autoShow
         Print(db.autoShow and L["Open window on new round enabled."] or L["Open window on new round disabled."])
     else
-        Print(L["Commands:"] .. " /tmogc [show | settings | themes | spin | addtheme <name> | gallery | outfit | next | close | winner | resetpool | resetall | sync | announce | autoshow]")
+        Print(L["Commands:"] .. " /tmogc [show | settings | themes | spin | addtheme <name> | gallery | outfit | next | close | winner | finish | resetpool | resetall | sync | announce | autoshow]")
     end
 end

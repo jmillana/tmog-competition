@@ -6,7 +6,7 @@ local C = S.C
 local Settings = {}
 ns.Settings = Settings
 
-local WIDTH, HEIGHT = 330, 320
+local WIDTH, HEIGHT = 330, 350
 local PAD = 16
 local INNER = WIDTH - 2 * PAD
 
@@ -55,6 +55,13 @@ function Settings:Build()
     self.autoShow:SetPoint("TOPLEFT", PAD, -214)
     self.autoShow:SetWidth(INNER)
 
+    self.restartRounds = S:Checkbox(f, "Restart the round counter for each new competition",
+        "When a finished competition is followed by a new one, or after Reset All, rounds count from 1 again (leader only).",
+        function() return TC.db.restartRounds end,
+        function(value) TC.db.restartRounds = value end)
+    self.restartRounds:SetPoint("TOPLEFT", PAD, -240)
+    self.restartRounds:SetWidth(INNER)
+
     local note = S:Text(f, 10, C.muted, "CENTER")
     note:SetPoint("BOTTOM", 0, 16)
     note:SetWidth(INNER)
@@ -71,6 +78,7 @@ function Settings:Refresh()
     end
     self.announce:Update()
     self.autoShow:Update()
+    self.restartRounds:Update()
 end
 
 function Settings:Toggle()
