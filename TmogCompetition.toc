@@ -7,3 +7,6 @@
 
 Locale.lua
 Style.lua
+TmogCompetition.lua
+Outfit.lua
+UI.lua
