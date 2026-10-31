@@ -2,7 +2,7 @@
 ## Title: TmogCompetition
 ## Notes: Handle tmog voting and ranking
 ## Author: Jmillana
-## Version: 0.1.0
+## Version: 0.2.0
 ## SavedVariables: TmogCompetitionDB
 
 Locale.lua
