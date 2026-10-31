@@ -10,6 +10,8 @@ Style.lua
 TmogCompetition.lua
 History.lua
 Outfit.lua
+Themes.lua
 UI.lua
 Explore.lua
 Gallery.lua
+Wheel.lua
