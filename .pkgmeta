@@ -1,0 +1,6 @@
+package-as: TmogCompetition
+
+ignore:
+  - README.md
+  - Media/Logo.png
+  - Media/Logo.svg
