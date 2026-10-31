@@ -1,3 +1,5 @@
+<p align="center"><img src="Media/Logo.png" alt="TmogCompetition logo" width="160"></p>
+
 # TmogCompetition
 
 Run transmog competitions in a party or raid. Every participant needs the addon installed.
