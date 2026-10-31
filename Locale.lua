@@ -115,8 +115,8 @@ strings.esES = {
     ["OVERALL WINNER"] = "GANADOR GENERAL",
     ["OVERALL WINNERS"] = "GANADORES GENERALES",
     ["Restart the round counter for each new competition"] = "Reiniciar el contador de rondas en cada competición",
-    ["When a finished competition is followed by a new one, or after Reset All, rounds count from 1 again (leader only)."] =
-        "Al empezar una competición nueva tras terminar la anterior, o tras Reiniciar todo, las rondas vuelven a contar desde 1 (solo el líder).",
+    ["When a finished competition is followed by a new one, rounds count from 1 again (leader only). Reset All always restarts them."] =
+        "Al empezar una competición nueva tras terminar la anterior, las rondas vuelven a contar desde 1 (solo el líder). Reiniciar todo siempre las reinicia.",
     ["%d. %s - %.2f (%d votes)"] = "%d. %s - %.2f (%d votos)",
     ["%d player(s) haven't showcased yet. Announce the winner anyway?"] =
         "%d jugador(es) aún no han desfilado. ¿Anunciar al ganador de todos modos?",

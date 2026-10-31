@@ -461,7 +461,11 @@ function UI:Refresh()
     -- Status
     local phase = PHASES[db.phase] or PHASES.IDLE
     self.phase:Set(L[phase[1]], phase[2])
-    self.roundText:SetText(db.round > 0 and (L["Round %d"]):format(db.round) or L["Not started"])
+    if db.finished then
+        self.roundText:SetText(L["Competition finished"])
+    else
+        self.roundText:SetText(db.round > 0 and (L["Round %d"]):format(db.round) or L["Not started"])
+    end
     self.leaderText:SetText(TC.leader and (S:Color(C.muted, L["Leader "]) .. self:ColoredName(TC.leader)) or "")
     self.themeText:SetText(db.currentTheme and (L["Theme "] .. S:Color(C.gold, db.currentTheme)) or "")
 

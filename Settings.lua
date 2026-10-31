@@ -56,7 +56,7 @@ function Settings:Build()
     self.autoShow:SetWidth(INNER)
 
     self.restartRounds = S:Checkbox(f, "Restart the round counter for each new competition",
-        "When a finished competition is followed by a new one, or after Reset All, rounds count from 1 again (leader only).",
+        "When a finished competition is followed by a new one, rounds count from 1 again (leader only). Reset All always restarts them.",
         function() return TC.db.restartRounds end,
         function(value) TC.db.restartRounds = value end)
     self.restartRounds:SetPoint("TOPLEFT", PAD, -240)

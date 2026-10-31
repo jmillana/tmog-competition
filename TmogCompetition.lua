@@ -39,7 +39,7 @@ local DEFAULTS = {
     themeResults = {},   -- finished themes of this competition: { { theme = name|nil, results = {...} }, ... }
     finished = false,    -- the leader finished the competition (overall ranking announced)
     overallWinner = nil, -- { names = {...}, score = n }
-    restartRounds = false, -- leader option: a new competition restarts the round counter
+    restartRounds = true, -- leader option: a new competition after a finish restarts the round counter
     announce = true,
     autoShow = true,
     frame = nil,
@@ -328,8 +328,9 @@ local function ClearCompetition(resetRound)
     if resetRound then db.round = 0 end
 end
 
-function TC:ResetAllLocal(resetRound)
-    ClearCompetition(resetRound)
+-- Reset All always restarts the round counter: it is a full reset.
+function TC:ResetAllLocal()
+    ClearCompetition(true)
     wipe(db.outfits)
     if ns.History then ns.History:EndCompetition() end
 end
@@ -419,8 +420,8 @@ function Handlers.RESETPOOL(self)
     wipe(db.shown)
 end
 
-function Handlers.RESETALL(self, sender, resetRound)
-    self:ResetAllLocal(resetRound == "1")
+function Handlers.RESETALL(self)
+    self:ResetAllLocal()
 end
 
 function Handlers.FINISH(self, sender, names, score)
@@ -828,9 +829,8 @@ end
 function TC:CmdResetAll()
     if not self:RequireLeader() then return end
     self:Confirm(L["Reset the whole competition? All scores and the shuffle pool will be cleared."], function()
-        local reset = db.restartRounds and true or false
-        self:ResetAllLocal(reset)
-        self:Send("RESETALL", reset and 1 or 0)
+        self:ResetAllLocal()
+        self:Send("RESETALL")
         self:Refresh()
     end)
 end
@@ -907,6 +907,11 @@ function TC:ADDON_LOADED(name)
     end
     self.db = db
     ns.SetLanguage(db.language)
+    -- The restart option first shipped switched off; switch it on once (later choices are kept).
+    if not db.restartRoundsDefaulted then
+        db.restartRounds = true
+        db.restartRoundsDefaulted = true
+    end
 
     C_ChatInfo.RegisterAddonMessagePrefix(self.PREFIX)
     self:RegisterEvent("CHAT_MSG_ADDON")

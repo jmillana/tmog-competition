@@ -18,7 +18,7 @@ asked to confirm before spinning away from a theme whose winner was never announ
 The ranking has a tab per category (theme) plus **Overall**. When every theme is done, the leader clicks
 **Finish Competition**: the overall ranking (sum of each player's theme scores) is announced with the top 3 and shown to
 everyone. The next Shuffle & Start or spin begins a new competition. Turn on **Restart the round counter for each new
-competition** in settings to count rounds from 1 again (also applies to Reset All).
+competition** in settings (on by default) to count rounds from 1 again. Reset All always restarts the counter.
 
 Only the group leader can shuffle, start/close rounds, announce the winner and reset. Other clients ignore those messages from anyone else.
 
@@ -49,7 +49,7 @@ announcement and auto-open options. Translations live in `Locale.lua`, where the
 | `VOTE id score` | voter | a vote |
 | `CLOSE id name avg count total` | leader | official round result |
 | `WINNER names avg` | leader | winner(s) |
-| `RESETPOOL` / `RESETALL restartRounds` | leader | resets |
+| `RESETPOOL` / `RESETALL` | leader | resets (Reset All also restarts the round counter) |
 | `FINISH names score` / `NEWCOMP restartRounds` | leader | finish (overall winner) / start a new competition |
 | `TRCOUNT n` + list `TR` | leader | sync of finished themes (`@theme`, then results) |
 | `STATE round phase contestant winners avg` | leader | sync header |
