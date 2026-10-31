@@ -11,7 +11,7 @@ Run transmog competitions in a party or raid. Every participant needs the addon 
 
 Nobody showcases twice until the leader clicks **Reset Pool**. **Reset All** clears scores too.
 
-The ranking and winner are **per theme**. When the carousel picks a new theme, the ranking, winner and shuffle pool start
+The ranking and winner are **per theme**. When the draw picks a new theme, the ranking, winner and shuffle pool start
 fresh so everyone showcases again. Earlier themes stay in the gallery. The leader can't spin while voting is open, and is
 asked to confirm before spinning away from a theme whose winner was never announced.
 
@@ -56,22 +56,22 @@ announcement and auto-open options. Translations live in `Locale.lua`, where the
 | `L tag id more items` | leader | chunked list (`VOTERS`, `VOTED`, `SHOWN`, `RES`) |
 | `OUTFIT race sex more items` | contestant | their outfit (`slot:appearance:secondary:illusion`, chunked) |
 | `THEMEADD name` / `THEMEDEL name` | leader | add / remove a theme |
-| `THEMESPIN` | leader | everyone's carousel opens and starts spinning |
-| `THEMERESULT name jitter` | leader | picked theme; every carousel slows down and stops on it (jitter is unused) |
+| `THEMESPIN` | leader | everyone's draw opens and starts spinning |
+| `THEMERESULT name jitter` | leader | picked theme; every reel slows down and stops on it (jitter is unused) |
 | `THEMERESET` | leader | put used themes back in the pool |
 | `THEMECUR name` + lists `TPOOL`, `TUSED` | leader | theme sync for late joiners / reloads |
 
-## Theme carousel
+## Theme draw
 Open it with the **Themes** button or `/tmogc themes`. Only the raid leader can add or remove themes and spin.
-The carousel is a vertical reel: the selected theme sits in the highlighted middle row, with one theme above and one
+The draw is shown as a vertical reel: the selected theme sits in the highlighted middle row, with one theme above and one
 below. With a single theme left, all three rows show it.
 
 1. The leader adds themes (type a name and press Enter or **Add**, or `/tmogc addtheme <name>`).
-2. The leader clicks **Spin** (or `/tmogc spin`). Every player's carousel opens and starts spinning.
-3. About 2 seconds later the leader's addon picks a random theme and sends it to everyone. Every carousel slows down and stops with it in the middle,
+2. The leader clicks **Spin** (or `/tmogc spin`). Every player's draw opens and starts spinning.
+3. About 2 seconds later the leader's addon picks a random theme and sends it to everyone. Every reel slows down and stops with it in the middle,
    and the leader's client announces it in raid chat.
 4. The picked theme leaves the pool and becomes the current theme (shown in the main window's title bar).
-   **Reset used** puts picked themes back in the carousel. Reset All does not touch themes.
+   **Reset used** puts picked themes back in the draw. Reset All does not touch themes.
 
 ## Outfit gallery
 When a player goes on stage, their client reads its own outfit (hidden `DressUpModel` → `GetItemTransmogInfoList()`)

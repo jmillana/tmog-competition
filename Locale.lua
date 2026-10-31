@@ -136,8 +136,8 @@ strings.esES = {
     ["Type a theme name first."] = "Escribe primero el nombre de la temática.",
     ["Theme names can be up to %d characters."] = "Las temáticas pueden tener hasta %d caracteres.",
     ["\"%s\" is already on the list."] = "\"%s\" ya está en la lista.",
-    ["Put every used theme back in the carousel?"] = "¿Devolver al carrusel todas las temáticas usadas?",
-    ["The carousel is already spinning."] = "El carrusel ya está girando.",
+    ["Put every used theme back in the draw?"] = "¿Devolver al sorteo todas las temáticas usadas?",
+    ["The draw is already running."] = "El sorteo ya está en marcha.",
     ["The theme pool is empty. Add themes or reset the used ones."] =
         "No quedan temáticas. Añade más o recupera las usadas.",
     ["The next transmog theme is: %s!"] = "¡La siguiente temática de transfiguración es: %s!",
@@ -174,7 +174,7 @@ strings.esES = {
     ["Show every contestant's outfit with the current ranking."] =
         "Muestra el atuendo de cada participante con la clasificación.",
     ["Themes"] = "Temáticas",
-    ["Open the theme carousel."] = "Abre el carrusel de temáticas.",
+    ["Open the theme draw."] = "Abre el sorteo de temáticas.",
     ["Waiting for the next round."] = "Esperando a la siguiente ronda.",
     ["No one yet"] = "Nadie todavía",
     ["%d of %d voted"] = "%d de %d han votado",
@@ -238,15 +238,15 @@ strings.esES = {
     ["LIVE"] = "EN CURSO",
 
     -- Carousel
-    ["Theme Carousel"] = "Carrusel de temáticas",
+    ["Theme Draw"] = "Sorteo de temáticas",
     ["No themes yet"] = "Aún no hay temáticas",
     ["Spin"] = "Girar",
     ["Spin for everyone. The theme it stops on is removed from the pool."] =
-        "Gira para todos. La temática elegida se quita del carrusel.",
+        "Gira para todos. La temática elegida se quita del sorteo.",
     ["Only the raid leader can add themes and spin."] = "Solo el líder de banda puede añadir temáticas y girar.",
     ["Reset used"] = "Recuperar usadas",
-    ["Put every theme that was already picked back in the carousel."] =
-        "Devuelve al carrusel todas las temáticas ya elegidas.",
+    ["Put every theme that was already picked back in the draw."] =
+        "Devuelve al sorteo todas las temáticas ya elegidas.",
     ["New theme, e.g. Pirates"] = "Nueva temática, p. ej. Piratas",
     ["Add"] = "Añadir",
     ["Remove this theme"] = "Quitar esta temática",
@@ -255,7 +255,7 @@ strings.esES = {
     ["CURRENT"] = "ACTUAL",
     ["USED"] = "USADA",
     ["CURRENT THEME"] = "TEMÁTICA ACTUAL",
-    ["Add themes, then spin"] = "Añade temáticas y gira el carrusel",
+    ["Add themes, then spin"] = "Añade temáticas y haz el sorteo",
     ["Waiting for the leader to spin"] = "Esperando a que el líder gire la ruleta",
     ["Themes  -  %d left, %d used"] = "Temáticas  -  quedan %d, %d usadas",
 

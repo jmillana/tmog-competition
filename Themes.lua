@@ -13,7 +13,7 @@ local Themes = {}
 ns.Themes = Themes
 
 local MAX_LEN = 40
-local PICK_DELAY = 2 -- seconds the carousel spins freely before the leader picks
+local PICK_DELAY = 2 -- seconds the draw spins freely before the leader picks
 
 for _, cmd in ipairs({ "THEMEADD", "THEMEDEL", "THEMESPIN", "THEMERESULT", "THEMERESET", "THEMECUR" }) do
     TC.LEADER_ONLY[cmd] = true
@@ -110,7 +110,7 @@ end
 
 function Themes:CmdReset()
     if not TC:RequireLeader() then return end
-    TC:Confirm(L["Put every used theme back in the carousel?"], function()
+    TC:Confirm(L["Put every used theme back in the draw?"], function()
         self:ResetLocal()
         TC:Send("THEMERESET")
         TC:Refresh()
@@ -120,7 +120,7 @@ end
 function Themes:CmdSpin()
     if not TC:RequireLeader() then return end
     if ns.Wheel:IsSpinning() or self.pickPending then
-        TC.Print(L["The carousel is already spinning."])
+        TC.Print(L["The draw is already running."])
         return
     end
     if #TC.db.themes == 0 then

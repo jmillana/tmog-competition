@@ -32,7 +32,7 @@ local DEFAULTS = {
     shown = {},     -- [name] = true: already showcased (shuffle pool)
     winner = nil,   -- { names = {...}, avg = n, theme = "Pirates" or nil }
     outfits = {},   -- [name] = { race, sex, slots = { [slotID] = { appearanceID, secondaryID, illusionID } } }
-    themes = {},     -- theme pool still available for the carousel (in order)
+    themes = {},     -- theme pool still available for the draw (in order)
     usedThemes = {}, -- themes already picked
     currentTheme = nil,
     language = "auto", -- "auto" follows the game client, or "enUS" / "esES"

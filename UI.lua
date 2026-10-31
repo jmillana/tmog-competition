@@ -222,7 +222,7 @@ function UI:BuildFooter(f)
         "Show every contestant's outfit with the current ranking.")
     galleryBtn:SetPoint("BOTTOMRIGHT", -PAD, 14)
     local themesBtn = S:Button(f, "Themes", 80, 26, "secondary", function() ns.Wheel:Toggle() end,
-        "Open the theme carousel.")
+        "Open the theme draw.")
     themesBtn:SetPoint("RIGHT", galleryBtn, "LEFT", -6, 0)
 
     self.footer = S:Text(f, 11, C.muted)

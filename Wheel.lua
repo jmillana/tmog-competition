@@ -133,7 +133,7 @@ function Wheel:BuildControls(f)
     self.listLabel = S:Label(f, "Themes")
     self.listLabel:SetPoint("TOPLEFT", PAD, -330)
     self.resetBtn = S:Button(f, "Reset used", 90, 20, "ghost", function() ns.Themes:CmdReset() end,
-        "Put every theme that was already picked back in the carousel.")
+        "Put every theme that was already picked back in the draw.")
     self.resetBtn:SetPoint("TOPRIGHT", -PAD, -324)
 
     local function add(edit)
@@ -156,7 +156,7 @@ end
 
 function Wheel:Build()
     if self.frame then return end
-    local f = S:Window("TmogCompetitionWheel", WIDTH, HEIGHT, "Theme Carousel")
+    local f = S:Window("TmogCompetitionWheel", WIDTH, HEIGHT, "Theme Draw")
     self.frame = f
     f:SetPoint("CENTER")
     f:SetFrameStrata("HIGH")
