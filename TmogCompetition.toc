@@ -22,7 +22,10 @@ Modules/History.lua
 Modules/Outfit.lua
 Modules/Themes.lua
 UI/MainWindow.lua
+UI/Reel.lua
 UI/Explore.lua
 UI/Gallery.lua
 UI/Wheel.lua
+UI/PlayerDraw.lua
+UI/Timer.lua
 UI/Settings.lua

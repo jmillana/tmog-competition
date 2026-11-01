@@ -7,7 +7,7 @@ local C = S.C
 local UI = {}
 ns.UI = UI
 
-local WIDTH, HEIGHT = 400, 750
+local WIDTH, HEIGHT = 400, 780
 local PAD = 14
 local INNER = WIDTH - 2 * PAD
 local ROW_HEIGHT = 22
@@ -132,7 +132,7 @@ function UI:BuildLeaderControls(f)
 
     local bar = CreateFrame("Frame", nil, f)
     bar:SetPoint("TOPLEFT", PAD, -362)
-    bar:SetSize(INNER, 82)
+    bar:SetSize(INNER, 112)
     self.leaderBar = bar
 
     local w = math.floor((INNER - 8) / 3)
@@ -170,6 +170,25 @@ function UI:BuildLeaderControls(f)
         function() TC:CmdFinishCompetition() end,
         "MAIN_FINISH_TIP")
     self.finishBtn:SetPoint("TOPLEFT", halfW + 4, -56)
+    -- Row 4: countdown (/pull): label, then 5 min / 10 min / custom length.
+    local countdownLabel = S:Text(bar, 12, C.muted)
+    countdownLabel:SetPoint("TOPLEFT", 0, -86)
+    countdownLabel:SetSize(96, 26)
+    S:Static(countdownLabel, "MAIN_COUNTDOWN")
+    local cdW = math.floor((INNER - 96 - 12) / 4)
+    local function countdownButton(text, col, onClick, tooltip, variant)
+        local b = S:Button(bar, text, cdW, 26, variant or "secondary", onClick, tooltip)
+        b:SetPoint("TOPLEFT", 96 + col * (cdW + 4), -86)
+        return b
+    end
+    self.countdown5Btn = countdownButton("MAIN_COUNTDOWN_5", 0, function() TC:CmdCountdown(5 * 60) end,
+        "MAIN_COUNTDOWN_TIP")
+    self.countdown10Btn = countdownButton("MAIN_COUNTDOWN_10", 1, function() TC:CmdCountdown(10 * 60) end,
+        "MAIN_COUNTDOWN_TIP")
+    self.countdownCustomBtn = countdownButton("...", 2, function() self:AskCustomCountdown() end,
+        "MAIN_COUNTDOWN_CUSTOM_TIP")
+    self.countdownStopBtn = countdownButton("MAIN_COUNTDOWN_STOP", 3, function() TC:CmdCountdown(0) end,
+        "MAIN_COUNTDOWN_STOP_TIP", "danger")
 
     self.notLeader = S:Panel(f, S.Alpha(C.panel, 0.5))
     self.notLeader:SetPoint("TOPLEFT", PAD, -350)
@@ -177,6 +196,56 @@ function UI:BuildLeaderControls(f)
     local text = S:Text(self.notLeader, 11, C.muted, "CENTER")
     text:SetPoint("CENTER")
     S:Static(text, "MAIN_LEADER_ONLY")
+end
+
+------------------------------------------------------------------------
+-- Countdown
+------------------------------------------------------------------------
+local function PopupEditBox(dialog)
+    return (dialog.GetEditBox and dialog:GetEditBox()) or dialog.editBox or dialog.EditBox
+end
+
+local function StartCustomCountdown(text)
+    local seconds = strtrim(text or "") == "0" and 0 or TC:ParseMinutes(text) -- 0 cancels
+    if seconds then
+        TC:CmdCountdown(seconds)
+    else
+        TC.Print(L:Format("CORE_COUNTDOWN_INVALID", { max = TC.MAX_COUNTDOWN / 60 }))
+    end
+end
+
+StaticPopupDialogs["TMOGCOMPETITION_COUNTDOWN"] = {
+    text = "MAIN_COUNTDOWN_PROMPT",
+    button1 = "POPUP_ACCEPT",
+    button2 = "POPUP_CANCEL",
+    hasEditBox = 1,
+    maxLetters = 8,
+    OnShow = function(dialog)
+        local edit = PopupEditBox(dialog)
+        if edit then
+            edit:SetText("")
+            edit:SetFocus()
+        end
+    end,
+    OnAccept = function(dialog)
+        local edit = PopupEditBox(dialog)
+        if edit then StartCustomCountdown(edit:GetText()) end
+    end,
+    EditBoxOnEnterPressed = function(edit)
+        StartCustomCountdown(edit:GetText())
+        StaticPopup_Hide("TMOGCOMPETITION_COUNTDOWN")
+    end,
+    EditBoxOnEscapePressed = function() StaticPopup_Hide("TMOGCOMPETITION_COUNTDOWN") end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+function UI:AskCustomCountdown()
+    local popup = StaticPopupDialogs.TMOGCOMPETITION_COUNTDOWN
+    popup.text, popup.button1, popup.button2 = L.MAIN_COUNTDOWN_PROMPT, L.POPUP_ACCEPT, L.POPUP_CANCEL
+    StaticPopup_Show("TMOGCOMPETITION_COUNTDOWN")
 end
 
 function UI:BuildWinnerBanner(f)
@@ -508,14 +577,17 @@ function UI:Refresh()
     local stage = self:StartStage(db)
     self.nextBtn:SetText(stage == "start" and L.MAIN_START or stage == "shuffle" and L.MAIN_SHUFFLE or L.MAIN_NEXT_PARTICIPANT)
     S:FitLabel(self.nextBtn)
-    self.nextBtn:SetEnabled(db.phase ~= "VOTING" and (stage == "start" or #pool > 0))
+    local drawing = TC:IsDrawRunning()
+    self.nextBtn:SetEnabled(db.phase ~= "VOTING" and not drawing and (stage == "start" or #pool > 0))
     -- The theme draw is available once the competition has started.
-    self.shuffleBtn:SetEnabled(stage ~= "start" and db.phase ~= "VOTING" and #db.themes > 0
-        and not ns.Wheel:IsSpinning() and not ns.Themes.pickPending)
+    self.shuffleBtn:SetEnabled(stage ~= "start" and db.phase ~= "VOTING" and #db.themes > 0 and not drawing)
+    -- Right after Start, point the leader at the (optional) theme draw before the first player.
+    self.shuffleBtn:SetHighlighted(db.themeHint and stage == "shuffle" and self.shuffleBtn:IsEnabled())
     self.closeBtn:SetEnabled(db.phase == "VOTING")
     self.winnerBtn:SetEnabled(db.phase ~= "VOTING" and not db.finished and next(db.results) ~= nil)
     self.finishBtn:SetEnabled(db.phase ~= "VOTING" and not db.finished and #TC:GetOverallRanking() > 0)
     self.finishBtn:SetText(db.finished and L.MAIN_FINISHED or L.MAIN_FINISH)
+    self.countdownStopBtn:SetEnabled(ns.Timer:Remaining() ~= nil)
 
     -- Winner banner: overall winner once finished, otherwise the current theme's winner.
     local ov = db.finished and db.overallWinner
@@ -534,7 +606,7 @@ function UI:Refresh()
     end
 
     -- Leader controls take more room than the "only the leader" note.
-    local top = isLeader and -454 or -400
+    local top = isLeader and -484 or -400
     self.winnerBanner:SetPoint("TOPLEFT", PAD, top)
     self.rankingCard:SetPoint("TOPLEFT", PAD, hasWinner and (top - 38) or top)
 

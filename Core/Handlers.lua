@@ -26,6 +26,19 @@ function Handlers.ROUND(self, sender, id, contestant)
     if self.db.autoShow and ns.UI then ns.UI:Show() end
 end
 
+-- Player draw: the leader's reel spins (PLAYERSPIN), then stops on the pick (PLAYERRESULT).
+-- The round itself starts with the ROUND message once the leader's reel has stopped.
+function Handlers.PLAYERSPIN(self)
+    if ns.PlayerDraw then ns.PlayerDraw:StartSpin(self:GetPool()) end
+end
+
+function Handlers.PLAYERRESULT(self, sender, name)
+    if not name or name == "" or not ns.PlayerDraw then return end
+    -- Late or missed PLAYERSPIN: start from our own pool so the reel still stops on it.
+    if not ns.PlayerDraw:IsSpinning() then ns.PlayerDraw:StartSpin(self:GetPool()) end
+    ns.PlayerDraw:Land(name)
+end
+
 function Handlers.VOTE(self, sender, id, score)
     local db = self.db
     id, score = tonumber(id), tonumber(score)

@@ -6,9 +6,12 @@ Run transmog competitions in a party or raid. Every participant needs the addon 
 
 ## How it works
 1. Form a group. Everyone with the addon shows up as a participant (players without it are listed under "Missing addon").
-2. The **group leader** clicks **Start** to begin the competition. Optionally, **Shuffle Themes** picks a theme first.
+2. The **group leader** clicks **Start** to begin the competition. Optionally, **Shuffle Themes** picks a theme first
+   (it pulses right after Start as a reminder).
    Then **Shuffle** puts a random participant who hasn't showcased yet on stage and opens voting; after that the button
    reads **Next participant**. A new theme makes everyone eligible again, so its first pick is a **Shuffle** again.
+   Each pick runs the **player draw** for everyone: the same reel as the theme draw, spinning through the players who
+   haven't showcased yet. Voting opens when it stops, and the window closes by itself a few seconds later.
 3. Players vote 1-10. The window shows how many votes are still pending and who hasn't voted yet. Scores stay hidden until the round closes. You can change your vote until then.
 4. The leader clicks **Close Voting**. The average score is revealed and added to the ranking.
 5. Repeat until everyone has showcased, then click **Announce Winner** (highest average; ties break on vote count).
@@ -23,6 +26,10 @@ The ranking has a tab per category (theme) plus **Overall**. When every theme is
 **Finish Competition**: the overall ranking (sum of each player's theme scores) is announced with the top 3 and shown to
 everyone. The button goes back to **Start**, which begins a new competition. Turn on **Restart the round counter for each new
 competition** in settings (on by default) to count rounds from 1 again. Reset All always restarts the counter.
+
+The leader can also start a countdown with the **Countdown** buttons: **5 min**, **10 min** or **...** for a custom
+length (minutes, `m:ss` or `h:mm:ss`), or `/tmogc countdown <minutes>`. The red **Stop** button stops it for everyone. Every player with the addon sees an on-screen `hh:mm:ss` timer (drag to move,
+right-click to hide). It also runs `/pull <seconds>` through DBM or BigWigs, or the game countdown without them.
 
 Only the group leader can shuffle, start/close rounds, announce the winner and reset. Other clients ignore those messages from anyone else.
 
@@ -58,6 +65,9 @@ Strings live in `Locales/enUS.lua` (also the fallback) and `Locales/esES.lua`; `
 |---|---|---|
 | `HELLO ver wantReply` | anyone | has the addon; `wantReply=1` asks others to reply and the leader to sync |
 | `PING` | leader | everyone re-sends HELLO |
+| `PLAYERSPIN` | leader | everyone's player draw opens and starts spinning |
+| `PLAYERRESULT name` | leader | picked player; every reel slows down and stops on them (the round follows with `ROUND`) |
+| `TIMER seconds` | leader | show the hh:mm:ss countdown (0 hides it; also part of the sync) |
 | `ROUND id name` | leader | new round |
 | `VOTE id score` | voter | a vote |
 | `CLOSE id name avg count total` | leader | official round result |
@@ -100,6 +110,7 @@ The gallery is saved per player (not synced), so everyone keeps their own histor
 - **Sub-tabs:** one per theme picked in that competition. Rounds are filed under the theme that was current.
   Click a theme tab's trash icon to delete that theme's transmogs (with confirmation; bookmarks are kept).
 - **Cells:** outfit model (drag to rotate), rank, score and votes, 8 per page.
+- **Star (top-right of each transmog):** click the grey star to bookmark the look; click the gold star to remove it.
 - **Right-click a transmog:** Bookmark / Remove bookmark, Explore, Remove from gallery.
 - **Explore:** lists every piece (icon, slot, item, collected or not). Hover for the item tooltip, Shift-click to link it,
   **Try on** opens the outfit in the dressing room.
@@ -129,6 +140,7 @@ Core/      Init.lua      core object, saved-variable defaults, helpers (ns.Util)
            Commands.lua  player and leader actions
            Events.lua    game events and slash commands
 Modules/   History.lua (gallery history), Outfit.lua (outfit capture/sync), Themes.lua (theme pool and draw)
-UI/        Style.lua, MainWindow.lua, Explore.lua, Gallery.lua, Wheel.lua, Settings.lua
+UI/        Style.lua, MainWindow.lua, Reel.lua (shared spin reel), Explore.lua, Gallery.lua,
+           Wheel.lua (theme draw), PlayerDraw.lua, Timer.lua (countdown timer), Settings.lua
 Media/     logo and icon
 ```

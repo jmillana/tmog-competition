@@ -3,6 +3,8 @@ local ADDON, ns = ...
 local TC, L = ns.TC, ns.L
 local Print, Round2 = TC.Print, ns.Util.Round2
 
+local PLAYER_PICK_DELAY = 2 -- seconds the player draw spins freely before the leader picks
+
 StaticPopupDialogs["TMOGCOMPETITION_CONFIRM"] = {
     text = "%s",
     button1 = YES,
@@ -69,6 +71,7 @@ function TC:CmdStart()
     if db.started and not db.finished then return end
     self:EnsureNewCompetition()
     db.started = true
+    db.themeHint = true
     self:Send("STARTED")
     self:Announce(L.CORE_ANNOUNCE_STARTED, true)
     self:Refresh()
@@ -81,6 +84,10 @@ function TC:CmdNextRound()
         Print(L.CORE_CLOSE_BEFORE_NEXT)
         return
     end
+    if self:IsDrawRunning() then
+        Print(L.THEME_ALREADY_SPINNING)
+        return
+    end
     self:EnsureNewCompetition()
     if not db.started then -- e.g. /tmogc next without pressing Start
         db.started = true
@@ -91,7 +98,39 @@ function TC:CmdNextRound()
         Print(L.CORE_POOL_EMPTY)
         return
     end
-    local pick = pool[math.random(#pool)]
+
+    -- The player draw spins for everyone; the round starts once the leader's reel stops.
+    self.shufflePending = true
+    db.themeHint = false
+    self:Send("PLAYERSPIN")
+    ns.PlayerDraw:StartSpin(pool)
+    C_Timer.After(PLAYER_PICK_DELAY, function()
+        local current = self:GetPool()
+        if #current == 0 or self.db.phase == "VOTING" then
+            self.shufflePending = false
+            ns.PlayerDraw:Abort()
+            return
+        end
+        local pick = current[math.random(#current)]
+        self:Send("PLAYERRESULT", pick)
+        local function start()
+            self.shufflePending = false
+            self:StartRound(pick)
+        end
+        if not ns.PlayerDraw:Land(pick, start) then start() end
+    end)
+end
+
+-- True while the theme draw or the player draw is running (they must not overlap:
+-- a new theme resets who may showcase).
+function TC:IsDrawRunning()
+    return self.shufflePending or ns.Themes.pickPending or ns.Wheel:IsSpinning() or ns.PlayerDraw:IsSpinning()
+end
+
+-- Leader side: puts `pick` on stage and opens voting.
+function TC:StartRound(pick)
+    local db = self.db
+    if db.phase == "VOTING" then return end
     local voters = {}
     for name in pairs(self.participants) do
         if name ~= pick then voters[#voters + 1] = name end
@@ -104,6 +143,51 @@ function TC:CmdNextRound()
     self:SendList("VOTERS", id, voters)
     self:Announce(L:Format("CORE_ANNOUNCE_ROUND", { round = id, player = self:Short(pick), min = self.MIN_SCORE, max = self.MAX_SCORE }), true)
     self:Refresh()
+end
+
+-- Countdown: shows the hh:mm:ss timer to everyone (UI/Timer.lua) and runs "/pull <seconds>"
+-- through whichever addon registered /pull (DBM, BigWigs...), or the game's own countdown. 0 cancels it.
+local function FindSlashHandler(command)
+    command = command:lower()
+    for key, handler in pairs(SlashCmdList) do
+        local i = 1
+        local alias = _G["SLASH_" .. key .. i]
+        while alias do
+            if alias:lower() == command then return handler end
+            i = i + 1
+            alias = _G["SLASH_" .. key .. i]
+        end
+    end
+end
+
+TC.MAX_COUNTDOWN = 3600 -- seconds
+
+function TC:CmdCountdown(seconds)
+    if not self:RequireLeader() then return end
+    seconds = math.floor(tonumber(seconds) or -1)
+    if seconds < 0 or seconds > self.MAX_COUNTDOWN then
+        Print(L:Format("CORE_COUNTDOWN_INVALID", { max = self.MAX_COUNTDOWN / 60 }))
+        return
+    end
+    ns.Timer:Broadcast(seconds)
+    local pull = FindSlashHandler("/pull")
+    if pull then
+        pull(tostring(seconds), DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.editBox)
+    elseif C_PartyInfo and C_PartyInfo.DoCountdown then
+        C_PartyInfo.DoCountdown(seconds)
+    end
+end
+
+-- Parses a length typed by the user: minutes ("5", "2.5", "2,5"), "m:ss" or "h:mm:ss".
+-- Returns seconds or nil.
+function TC:ParseMinutes(text)
+    text = strtrim(text or "")
+    local h, hm, hs = text:match("^(%d+):(%d%d):(%d%d)$")
+    if h then return tonumber(h) * 3600 + tonumber(hm) * 60 + tonumber(hs) end
+    local m, s = text:match("^(%d+):(%d%d)$")
+    if m then return tonumber(m) * 60 + tonumber(s) end
+    local minutes = tonumber((text:gsub(",", ".")))
+    if minutes and minutes > 0 then return math.floor(minutes * 60 + 0.5) end
 end
 
 function TC:CmdCloseVoting()

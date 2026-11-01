@@ -120,6 +120,7 @@ function TC:SendSync()
         self:SendList("VOTED", db.round, SortedKeys(db.votes))
     end
     if ns.Themes then ns.Themes:SendSync() end
+    if ns.Timer then ns.Timer:SendSync() end
 end
 
 ------------------------------------------------------------------------
@@ -130,6 +131,7 @@ local LEADER_ONLY = {
     PING = true, ROUND = true, CLOSE = true, WINNER = true,
     RESETPOOL = true, RESETALL = true, STATE = true, L = true,
     FINISH = true, NEWCOMP = true, TRCOUNT = true, STARTED = true,
+    PLAYERSPIN = true, PLAYERRESULT = true,
 }
 -- Core/Handlers.lua and modules (Outfit, Themes) register their message types here.
 TC.Handlers, TC.ListHandlers, TC.LEADER_ONLY = Handlers, ListHandlers, LEADER_ONLY

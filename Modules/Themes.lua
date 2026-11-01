@@ -119,7 +119,7 @@ end
 
 function Themes:CmdSpin()
     if not TC:RequireLeader() then return end
-    if ns.Wheel:IsSpinning() or self.pickPending then
+    if TC:IsDrawRunning() then
         TC.Print(L.THEME_ALREADY_SPINNING)
         return
     end
@@ -141,7 +141,8 @@ function Themes:CmdSpin()
 end
 
 function Themes:Spin()
-    if ns.Wheel:IsSpinning() or self.pickPending then return end
+    if TC:IsDrawRunning() then return end
+    TC.db.themeHint = false
     TC:EnsureNewCompetition() -- first spin after a finished competition starts a new one
     if not TC.db.started then
         TC.db.started = true
@@ -162,9 +163,10 @@ function Themes:Spin()
         local jitter = 0.2 + math.random() * 0.6 -- where inside the segment the pointer stops
         self:PickLocal(pick)
         TC:Send("THEMERESULT", pick, ("%.3f"):format(jitter))
-        ns.Wheel:Land(pick, jitter, function()
+        local function announce()
             TC:Announce(L:Format("THEME_ANNOUNCE_NEXT", { theme = pick }), true)
-        end)
+        end
+        if not ns.Wheel:Land(pick, jitter, announce) then announce() end
         TC:Refresh()
     end)
 end

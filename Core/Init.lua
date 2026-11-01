@@ -33,6 +33,7 @@ TC.DEFAULTS = {
     overallWinner = nil, -- { names = {...}, score = n }
     restartRounds = true, -- leader option: a new competition after a finish restarts the round counter
     started = false,       -- the leader pressed Start for the running competition
+    themeHint = false,     -- leader just pressed Start: highlight Shuffle Themes until a theme or player is drawn
     announce = true,
     autoShow = true,
     frame = nil,

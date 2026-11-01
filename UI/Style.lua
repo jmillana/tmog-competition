@@ -305,7 +305,7 @@ local VARIANTS = {
 }
 
 local function UpdateButton(b)
-    local v = b.variant
+    local v = (b.highlighted and b:IsEnabled()) and VARIANTS.primary or b.variant
     if b.selected then
         b:SetBackdropColor(unpack(C.accent))
         b:SetBackdropBorderColor(unpack(C.accentHi))
@@ -330,6 +330,34 @@ function S:Button(parent, text, width, height, variant, onClick, tooltip)
     function b:SetText(t) self.label:SetText(t) end
     function b:SetSelected(selected)
         self.selected = selected and true or false
+        UpdateButton(self)
+    end
+    -- Draws attention to the button: primary colors plus a pulsing accent glow.
+    function b:SetHighlighted(on)
+        on = on and true or false
+        if on == (self.highlighted or false) then return end
+        self.highlighted = on
+        if on and not self.glow then
+            local glow = CreateFrame("Frame", nil, self, "BackdropTemplate")
+            glow:SetPoint("TOPLEFT", -3, 3)
+            glow:SetPoint("BOTTOMRIGHT", 3, -3)
+            glow:SetFrameLevel(math.max(0, self:GetFrameLevel() - 1))
+            glow:SetBackdrop({ edgeFile = WHITE, edgeSize = 2 })
+            glow:SetBackdropBorderColor(unpack(C.accentHi))
+            local pulse = glow:CreateAnimationGroup()
+            pulse:SetLooping("BOUNCE")
+            local fade = pulse:CreateAnimation("Alpha")
+            fade:SetFromAlpha(1)
+            fade:SetToAlpha(0.15)
+            fade:SetDuration(0.7)
+            fade:SetSmoothing("IN_OUT")
+            glow.pulse = pulse
+            self.glow = glow
+        end
+        if self.glow then
+            self.glow:SetShown(on)
+            if on then self.glow.pulse:Play() else self.glow.pulse:Stop() end
+        end
         UpdateButton(self)
     end
 

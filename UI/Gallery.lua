@@ -19,7 +19,15 @@ local TOP = 150
 local WIDTH = PAD * 2 + COLS * CELL_W + (COLS - 1) * GAP
 local HEIGHT = TOP + ROWS * CELL_H + (ROWS - 1) * GAP + 52
 local BOOKMARKS = "bookmarks"
+local CLEAR_W = 116 -- clear buttons right of the top tabs; the tab strip leaves room for them
 local STAR = "Interface\\Common\\FavoritesIcon"
+
+-- Gold star for a favourite; the same star greyed out when it is not one.
+local function SetStar(tex, on)
+    tex:SetTexture(STAR)
+    tex:SetDesaturated(not on)
+    tex:SetVertexColor(1, 1, 1)
+end
 
 -- "No theme" is stored as an internal key; show it translated.
 local function ThemeName(name)
@@ -106,10 +114,30 @@ function Gallery:CreateCell(i)
     cell.badge = S:Badge(overlay)
     cell.badge:SetPoint("TOPLEFT", 8, -8)
 
-    cell.star = overlay:CreateTexture(nil, "OVERLAY")
-    cell.star:SetSize(24, 24)
-    cell.star:SetPoint("TOPRIGHT", -6, -6)
-    cell.star:SetTexture(STAR)
+    -- Favourite toggle: empty star, filled once the look is in Bookmarks.
+    local star = CreateFrame("Button", nil, overlay)
+    star:SetSize(24, 24)
+    star:SetPoint("TOPRIGHT", -6, -6)
+    star:SetHitRectInsets(-4, -4, -4, -4) -- easier to click than the small icon
+    star.icon = star:CreateTexture(nil, "OVERLAY")
+    star.icon:SetAllPoints()
+    star:SetScript("OnClick", function() self:ToggleBookmark(cell.item) end)
+    star:SetScript("OnEnter", function()
+        star:SetAlpha(1)
+        GameTooltip:SetOwner(star, "ANCHOR_TOP")
+        GameTooltip:SetText(star.on and L.GALLERY_REMOVE_BOOKMARK or L.GALLERY_BOOKMARK, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    star:SetScript("OnLeave", function()
+        star:SetAlpha(star.on and 1 or 0.45)
+        GameTooltip_Hide()
+    end)
+    function star:Set(on)
+        self.on = on and true or false
+        SetStar(self.icon, self.on)
+        self:SetAlpha((self.on or self:IsMouseOver()) and 1 or 0.45)
+    end
+    cell.star = star
 
     cell.note = S:Text(overlay, 10, C.muted)
     cell.note:SetPoint("BOTTOMLEFT", 8, 10)
@@ -142,7 +170,7 @@ function Gallery:Build()
     f:SetPoint("CENTER")
     f:SetFrameStrata("HIGH")
 
-    self.topTabs = S:TabStrip(f, WIDTH - 2 * PAD - 96, 30, 13, function(key)
+    self.topTabs = S:TabStrip(f, WIDTH - 2 * PAD - CLEAR_W - 10, 30, 13, function(key)
         self.sel, self.themeIdx, self.page = key, nil, 1
         self:Refresh()
     end, function(key, tab)
@@ -156,7 +184,7 @@ function Gallery:Build()
     end, "GALLERY_DELETE_COMPETITION_TIP")
 
     -- Competition tabs: clear every competition (bookmarks are kept).
-    self.clearAll = S:Button(f, "GALLERY_CLEAR_ALL", 86, 24, "danger", function()
+    self.clearAll = S:Button(f, "GALLERY_CLEAR_ALL", CLEAR_W, 24, "danger", function()
         TC:Confirm(L.GALLERY_CONFIRM_CLEAR_ALL,
             function()
                 ns.History:Clear()
@@ -167,7 +195,7 @@ function Gallery:Build()
     self.clearAll:SetPoint("TOPRIGHT", -PAD, -44)
 
     -- Bookmarks tab: its own button that only clears bookmarks.
-    self.clearBookmarks = S:Button(f, "GALLERY_CLEAR_BOOKMARKS", 110, 24, "danger", function()
+    self.clearBookmarks = S:Button(f, "GALLERY_CLEAR_BOOKMARKS", CLEAR_W, 24, "danger", function()
         TC:Confirm(L.GALLERY_CONFIRM_CLEAR_BOOKMARKS, function()
             ns.History:ClearBookmarks()
             self:Refresh()
@@ -261,24 +289,35 @@ function Gallery:OpenCompetitionMenu(key, tab)
     end
 end
 
+-- Adds the look to Bookmarks, or removes it if it is already there.
+function Gallery:ToggleBookmark(item)
+    if not item then return end
+    local History, entry = ns.History, item.entry
+    if item.bookmark then
+        -- On the Bookmarks tab the look disappears for good, so ask first.
+        TC:Confirm(L:Format("GALLERY_CONFIRM_REMOVE_BOOKMARK", {
+            player = TC:Short(entry.name),
+            theme = ThemeName(entry.theme or ""),
+            competition = entry.competition or "",
+        }), function()
+            History:RemoveBookmark(entry.key)
+        end)
+        return
+    end
+    local key = History:Key(item.comp, item.theme, entry)
+    if History:IsBookmarked(key) then
+        History:RemoveBookmark(key)
+    else
+        History:AddBookmark(item.comp, item.theme, entry)
+    end
+end
+
 function Gallery:OpenCellMenu(cell)
     local item = cell.item
     if not item then return end
     local History = ns.History
     local entry = item.entry
-
-    local function toggleBookmark()
-        if item.bookmark then
-            History:RemoveBookmark(entry.key)
-        else
-            local key = History:Key(item.comp, item.theme, entry)
-            if History:IsBookmarked(key) then
-                History:RemoveBookmark(key)
-            else
-                History:AddBookmark(item.comp, item.theme, entry)
-            end
-        end
-    end
+    local function toggleBookmark() self:ToggleBookmark(item) end
 
     local bookmarked = item.bookmark or History:IsBookmarked(History:Key(item.comp, item.theme, entry))
     if not S:ContextMenu(cell, function(root)
@@ -423,7 +462,7 @@ function Gallery:RefreshCell(cell, item)
         bookmarked = ns.History:IsBookmarked(ns.History:Key(item.comp, item.theme, entry))
         cell.sub:SetText("")
     end
-    cell.star:SetShown(bookmarked)
+    cell.star:Set(bookmarked)
 
     if entry.rank then
         cell.badge:Show()
@@ -464,6 +503,8 @@ function Gallery:Refresh()
     self.clearAll:SetShown(not onBookmarks)
     self.clearAll:SetEnabled(#ns.History:Competitions() > 0)
     self.clearBookmarks:SetShown(onBookmarks)
+    S:FitLabel(self.clearAll) -- shrink the text if a translation is too long
+    S:FitLabel(self.clearBookmarks)
     self.clearBookmarks:SetEnabled(#ns.History:Bookmarks() > 0)
 end
 

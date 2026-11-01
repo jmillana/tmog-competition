@@ -94,6 +94,13 @@ SlashCmdList.TMOGCOMPETITION = function(input)
         ns.Themes:CmdSpin()
     elseif msg == "addtheme" then
         ns.Themes:CmdAdd(rest)
+    elseif msg == "countdown" or msg == "pull" then
+        local seconds = TC:ParseMinutes(rest)
+        if seconds then
+            TC:CmdCountdown(seconds)
+        else
+            Print(L:Format("CORE_COUNTDOWN_INVALID", { max = TC.MAX_COUNTDOWN / 60 }))
+        end
     elseif msg == "gallery" then
         ns.Gallery:Toggle()
     elseif msg == "outfit" then
@@ -107,6 +114,6 @@ SlashCmdList.TMOGCOMPETITION = function(input)
         db.autoShow = not db.autoShow
         Print(db.autoShow and L.CORE_AUTO_SHOW_ON or L.CORE_AUTO_SHOW_OFF)
     else
-        Print(L.CORE_COMMANDS .. " /tmogc [show | settings | themes | spin | addtheme <name> | gallery | outfit | start | next | close | winner | finish | resetpool | resetall | sync | announce | autoshow]")
+        Print(L.CORE_COMMANDS .. " /tmogc [show | settings | themes | spin | addtheme <name> | countdown <minutes> | gallery | outfit | start | next | close | winner | finish | resetpool | resetall | sync | announce | autoshow]")
     end
 end
