@@ -2,7 +2,7 @@
 ## Title: TmogCompetition
 ## Notes: Handle tmog voting and ranking
 ## Author: Jmillana
-## Version: 0.2.2
+## Version: 0.3.0
 ## IconTexture: Interface/AddOns/TmogCompetition/Media/Icon
 ## SavedVariables: TmogCompetitionDB
 
